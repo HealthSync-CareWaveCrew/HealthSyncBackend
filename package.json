@@ -1,0 +1,23 @@
+{
+  "name": "mediscan-ai-server",
+  "version": "1.0.0",
+  "description": "MediScan AI Backend Server - MERN Stack",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "dev": "node --env-file=.env --watch server.js",
+    "test": "node --env-file=.env verify_clinical.js"
+  },
+  "keywords": ["medical", "ai", "diagnosis", "mern"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "^1.38.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "mongoose": "^8.0.0"
+  }
+}
