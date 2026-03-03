@@ -1,7 +1,8 @@
 import {
     getAnalysisHistoryService,
     getAnalysisByIdService,
-    analyzeImageService
+    analyzeImageService,
+    analyzeClinicalDataService
 } from '../service/analysis.service.js';
 import ErrorClass from '../util/errorClass.js';
 
@@ -27,6 +28,23 @@ export const analyzeImage = async (req, res) => {
   });
 };
 
+/**
+ * Controller: Analyze clinical data
+ */
+export const analyzeClinicalData = async (req, res) => {
+  const { diseaseType, formData } = req.body;
+
+  if (!diseaseType || !formData) {
+    throw new ErrorClass("Missing diseaseType or formData.", 400);
+  }
+
+  const result = await analyzeClinicalDataService(diseaseType, formData);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
 
 /**
  * Controller: Get analysis history

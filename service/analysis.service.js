@@ -103,6 +103,86 @@ export const analyzeImageService = async (file, diseaseType) => {
 };
 
 /**
+ * Service: Analyze clinical data using Gemini AI
+ */
+
+export const analyzeClinicalDataService = async (diseaseType, formData) => {
+    try {
+        const modelId = "gemini-flash-latest";
+
+        const dataString = Object.entries(formData)
+            .map(([key, value]) => `- ${key}: ${value}`)
+            .join("\n");
+
+        const prompt = `
+        Task: Clinical Data Analysis for ${diseaseType}
+        
+        Patient Data:
+        ${dataString}
+
+        Based on the provided clinical indicators, analyze the likelihood of ${diseaseType}.
+        
+        1. Analyze the values against standard medical thresholds.
+        2. Predict if the patient likely has the disease or not.
+        3. Provide a confidence score/probability.
+        4. Explain the reasoning, highlighting key risk factors from the data.
+
+        Output strictly in JSON format:
+        {
+            "match": true, 
+            "disease": "${diseaseType} Prediction",
+            "confidence": "e.g., High (85%)",
+            "description": "Detailed analysis..."
+        }
+    `;
+
+        const result = await ai.models.generateContent({
+            model: modelId,
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            config: { responseMimeType: "application/json" },
+        });
+
+        if (!result || !result.text) {
+            throw new ErrorClass("AI model returned empty response.", 502);
+        }
+
+        let jsonResponse;
+
+        try {
+            jsonResponse = JSON.parse(result.text);
+        } catch (parseError) {
+            throw new ErrorClass("Invalid AI JSON response format.", 500);
+        }
+
+        // Save analysis (non-critical)
+        try {
+            const analysis = new Analysis({
+                type: "clinical",
+                diseaseType,
+                results: jsonResponse,
+                formData,
+            });
+
+            await analysis.save();
+        } catch (dbError) {
+            console.error("Database save failed:", dbError);
+            // Don't crash the request
+        }
+
+        return jsonResponse;
+
+    } catch (error) {
+        console.error("Error in analyzeClinicalDataService:", error);
+
+        if (error instanceof ErrorClass) {
+            throw error;
+        }
+
+        throw new ErrorClass("Clinical data analysis failed.", 500);
+    }
+};
+
+/**
  * Service: Get analysis history from database
  */
 export const getAnalysisHistoryService = async () => {

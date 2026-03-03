@@ -3,7 +3,8 @@ import multer from 'multer';
 import {
     getAnalysisHistory,
     getAnalysisById,
-    analyzeImage
+    analyzeImage,
+    analyzeClinicalData
 } from '../controller/analysis.controller.js';
 import { asyncHandler } from '../util/errorHandling.js';
 
@@ -18,6 +19,11 @@ const upload = multer({ storage: multer.memoryStorage() });
  */
 router.post('/analyze-image', upload.single('image'), asyncHandler(analyzeImage));
 
+/**
+ * POST /analyze-clinical-data
+ * Analyzes clinical data for disease prediction
+ */
+router.post('/analyze-clinical-data', asyncHandler(analyzeClinicalData));
 
 /**
  * GET /analysis-history
