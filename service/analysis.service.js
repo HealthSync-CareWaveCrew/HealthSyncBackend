@@ -1,5 +1,106 @@
+import { GoogleGenAI } from '@google/genai';
 import Analysis from '../models/Analysis.model.js';
 import ErrorClass from '../util/errorClass.js';
+
+// Initialize Gemini Client
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+    console.warn("WARNING: GEMINI_API_KEY is not set in .env file.");
+}
+const ai = new GoogleGenAI({ apiKey });
+
+/**
+ * Service: Analyze medical image using Gemini AI
+ */
+export const analyzeImageService = async (file, diseaseType) => {
+    try {
+        const base64Image = file.buffer.toString("base64");
+        const mimeType = file.mimetype;
+
+        const modelId = "gemini-flash-latest";
+
+        const prompt = `
+        User claims this is a ${diseaseType} image.
+        
+        Task 1: Verification
+        Verify if this image is indeed a valid medical image (e.g., MRI, CT Scan, X-Ray, Fundus) consistent with a ${diseaseType} diagnosis context.
+        - If the image is NOT a medical image or does NOT match the anatomy/modality for ${diseaseType}, set "match" to false.
+
+        Task 2: Analysis (Only if Verification passed)
+        If "match" is true:
+        - Analyze the image for signs of ${diseaseType}.
+        - Provide a confidence score (accuracy) for the prediction.
+        - Provide a descriptive analysis.
+
+        Output strictly in JSON format:
+        {
+            "match": boolean,
+            "reason": "Reason for mismatch (only if match is false)",
+            "disease": "Predicted condition/type (e.g., 'Meningioma', 'Diabetic Retinopathy', 'Normal')",
+            "confidence": "e.g., 95%",
+            "description": "Detailed description of findings..."
+        }
+    `;
+
+        const response = await ai.models.generateContent({
+            model: modelId,
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType,
+                                data: base64Image,
+                            },
+                        },
+                    ],
+                },
+            ],
+            config: {
+                responseMimeType: "application/json",
+            },
+        });
+
+        if (!response || !response.text) {
+            throw new ErrorClass("AI model returned empty response.", 502);
+        }
+
+        let jsonResponse;
+
+        try {
+            jsonResponse = JSON.parse(response.text);
+        } catch (parseError) {
+            throw new ErrorClass("Invalid AI JSON response format.", 500);
+        }
+
+        // Save to database
+        try {
+            const analysis = new Analysis({
+                type: "image",
+                diseaseType,
+                results: jsonResponse,
+            });
+
+            await analysis.save();
+        } catch (dbError) {
+            console.error("Database save failed:", dbError);
+            // Optional: don't crash entire request
+        }
+
+        return jsonResponse;
+
+    } catch (error) {
+        console.error("Error in analyzeImageService:", error);
+
+        if (error instanceof ErrorClass) {
+            throw error;
+        }
+
+        throw new ErrorClass("Image analysis failed.", 500);
+    }
+};
 
 /**
  * Service: Get analysis history from database
