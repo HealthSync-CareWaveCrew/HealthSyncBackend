@@ -4,7 +4,8 @@ import {
     getAnalysisHistory,
     getAnalysisById,
     analyzeImage,
-    analyzeClinicalData
+    analyzeClinicalData,
+    sendChatMessage
 } from '../controller/analysis.controller.js';
 import { asyncHandler } from '../util/errorHandling.js';
 
@@ -24,6 +25,12 @@ router.post('/analyze-image', upload.single('image'), asyncHandler(analyzeImage)
  * Analyzes clinical data for disease prediction
  */
 router.post('/analyze-clinical-data', asyncHandler(analyzeClinicalData));
+
+/**
+ * POST /chat
+ * Handles chat messages with AI assistant
+ */
+router.post('/chat', asyncHandler(sendChatMessage));
 
 /**
  * GET /analysis-history

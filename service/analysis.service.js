@@ -183,6 +183,49 @@ export const analyzeClinicalDataService = async (diseaseType, formData) => {
 };
 
 /**
+ * Service: Send chat message using Gemini AI
+ */
+export const sendChatMessageService = async (
+  message,
+  history,
+  systemInstruction
+) => {
+  try {
+    const modelId = "gemini-flash-latest";
+
+    const config = {};
+    if (systemInstruction) {
+      config.systemInstruction = systemInstruction;
+    }
+
+    const chat = ai.chats.create({
+      model: modelId,
+      history: history || [],
+      config,
+    });
+
+    const result = await chat.sendMessage({
+      message,
+    });
+
+    if (!result || !result.text) {
+      throw new ErrorClass("AI returned empty response.", 502);
+    }
+
+    return { text: result.text };
+
+  } catch (error) {
+    console.error("Error in sendChatMessageService:", error);
+
+    if (error instanceof ErrorClass) {
+      throw error;
+    }
+
+    throw new ErrorClass("Chat service failed.", 500);
+  }
+};
+
+/**
  * Service: Get analysis history from database
  */
 export const getAnalysisHistoryService = async () => {

@@ -2,7 +2,8 @@ import {
     getAnalysisHistoryService,
     getAnalysisByIdService,
     analyzeImageService,
-    analyzeClinicalDataService
+    analyzeClinicalDataService,
+    sendChatMessageService
 } from '../service/analysis.service.js';
 import ErrorClass from '../util/errorClass.js';
 
@@ -39,6 +40,28 @@ export const analyzeClinicalData = async (req, res) => {
   }
 
   const result = await analyzeClinicalDataService(diseaseType, formData);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
+ * Controller: Handle chat messages
+ */
+export const sendChatMessage = async (req, res) => {
+  const { history, message, systemInstruction } = req.body;
+
+  if (!message) {
+    throw new ErrorClass("Message is required.", 400);
+  }
+
+  const result = await sendChatMessageService(
+    message,
+    history,
+    systemInstruction
+  );
 
   res.status(200).json({
     success: true,
