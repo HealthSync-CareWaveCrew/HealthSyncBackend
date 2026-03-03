@@ -1,0 +1,13 @@
+# Server Environment Variables
+PORT=3000
+GEMINI_API_KEY=AIzaSyBIV6Kkd2xlXy3wUvbeqQ_ZvJY-EfFXQbg
+# MONGODB_URI=mongodb://localhost:27017/mediscan-ai
+MONGODB_URI=mongodb+srv://HealthSync_db_user:CareWaveCrew@cluster0.ehwbd2f.mongodb.net/?appName=Cluster0
+
+# s3
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+AWS_S3_BUCKET=
+
+NODE_ENV=development
