@@ -8,6 +8,10 @@ import analysisRoutes from './analysis.routes.js';
 import diseaseRoutes from './disease.routes.js';
 
 router.use("/", analysisRoutes);
+router.use("/diseases", diseaseRoutes);
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/admin', adminRoutes);
 
 // Test route
 router.get('/test', (req, res) => {
