@@ -1,9 +1,73 @@
 import {
     getAnalysisHistoryService,
-    getAnalysisByIdService
+    getAnalysisByIdService,
+    analyzeImageService,
+    analyzeClinicalDataService,
+    sendChatMessageService
 } from '../service/analysis.service.js';
 import ErrorClass from '../util/errorClass.js';
 
+/**
+ * Controller: Analyze medical image
+ */
+export const analyzeImage = async (req, res) => {
+  if (!req.file) {
+    throw new ErrorClass("No image file uploaded.", 400);
+  }
+
+  const { diseaseType } = req.body;
+
+  if (!diseaseType) {
+    throw new ErrorClass("diseaseType is required.", 400);
+  }
+
+  const result = await analyzeImageService(req.file, diseaseType);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
+ * Controller: Analyze clinical data
+ */
+export const analyzeClinicalData = async (req, res) => {
+  const { diseaseType, formData } = req.body;
+
+  if (!diseaseType || !formData) {
+    throw new ErrorClass("Missing diseaseType or formData.", 400);
+  }
+
+  const result = await analyzeClinicalDataService(diseaseType, formData);
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
+
+/**
+ * Controller: Handle chat messages
+ */
+export const sendChatMessage = async (req, res) => {
+  const { history, message, systemInstruction } = req.body;
+
+  if (!message) {
+    throw new ErrorClass("Message is required.", 400);
+  }
+
+  const result = await sendChatMessageService(
+    message,
+    history,
+    systemInstruction
+  );
+
+  res.status(200).json({
+    success: true,
+    data: result,
+  });
+};
 
 /**
  * Controller: Get analysis history
