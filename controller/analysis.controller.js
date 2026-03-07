@@ -15,13 +15,13 @@ export const analyzeImage = async (req, res) => {
     throw new ErrorClass("No image file uploaded.", 400);
   }
 
-  const { diseaseType } = req.body;
+  const { diseaseType, diseaseId } = req.body;
 
-  if (!diseaseType) {
-    throw new ErrorClass("diseaseType is required.", 400);
+  if (!diseaseType || !diseaseId) {
+    throw new ErrorClass("diseaseType and diseaseId are required.", 400);
   }
 
-  const result = await analyzeImageService(req.file, diseaseType);
+  const result = await analyzeImageService(diseaseId, req.file, diseaseType);
 
   res.status(200).json({
     success: true,
@@ -33,13 +33,13 @@ export const analyzeImage = async (req, res) => {
  * Controller: Analyze clinical data
  */
 export const analyzeClinicalData = async (req, res) => {
-  const { diseaseType, formData } = req.body;
+  const { diseaseType, formData, diseaseId} = req.body;
 
-  if (!diseaseType || !formData) {
-    throw new ErrorClass("Missing diseaseType or formData.", 400);
+  if (!diseaseType || !formData || !diseaseId) {
+    throw new ErrorClass("Missing diseaseType, formData, or diseaseId.", 400);
   }
 
-  const result = await analyzeClinicalDataService(diseaseType, formData);
+  const result = await analyzeClinicalDataService(diseaseId, diseaseType, formData);
 
   res.status(200).json({
     success: true,

@@ -6,6 +6,11 @@ const analysisSchema = new mongoose.Schema({
     enum: ['image', 'clinical'],
     required: true,
   },
+  disease: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Disease",
+    required: true,
+  },
   diseaseType: {
     type: String,
     required: true,
