@@ -12,7 +12,7 @@ const ai = new GoogleGenAI({ apiKey });
 /**
  * Service: Analyze medical image using Gemini AI
  */
-export const analyzeImageService = async (file, diseaseType) => {
+export const analyzeImageService = async (diseaseId, file, diseaseType) => {
     try {
         const base64Image = file.buffer.toString("base64");
         const mimeType = file.mimetype;
@@ -79,6 +79,7 @@ export const analyzeImageService = async (file, diseaseType) => {
         try {
             const analysis = new Analysis({
                 type: "image",
+                disease: diseaseId,
                 diseaseType,
                 results: jsonResponse,
             });
@@ -106,7 +107,7 @@ export const analyzeImageService = async (file, diseaseType) => {
  * Service: Analyze clinical data using Gemini AI
  */
 
-export const analyzeClinicalDataService = async (diseaseType, formData) => {
+export const analyzeClinicalDataService = async (diseaseId, diseaseType, formData) => {
     try {
         const modelId = "gemini-flash-latest";
 
@@ -158,6 +159,7 @@ export const analyzeClinicalDataService = async (diseaseType, formData) => {
         try {
             const analysis = new Analysis({
                 type: "clinical",
+                disease: diseaseId,
                 diseaseType,
                 results: jsonResponse,
                 formData,
@@ -186,72 +188,73 @@ export const analyzeClinicalDataService = async (diseaseType, formData) => {
  * Service: Send chat message using Gemini AI
  */
 export const sendChatMessageService = async (
-  message,
-  history,
-  systemInstruction
+    message,
+    history,
+    systemInstruction
 ) => {
-  try {
-    const modelId = "gemini-flash-latest";
+    try {
+        const modelId = "gemini-flash-latest";
 
-    const config = {};
-    if (systemInstruction) {
-      config.systemInstruction = systemInstruction;
+        const config = {};
+        if (systemInstruction) {
+            config.systemInstruction = systemInstruction;
+        }
+
+        const chat = ai.chats.create({
+            model: modelId,
+            history: history || [],
+            config,
+        });
+
+        const result = await chat.sendMessage({
+            message,
+        });
+
+        if (!result || !result.text) {
+            throw new ErrorClass("AI returned empty response.", 502);
+        }
+
+        return { text: result.text };
+
+    } catch (error) {
+        console.error("Error in sendChatMessageService:", error);
+
+        if (error instanceof ErrorClass) {
+            throw error;
+        }
+
+        throw new ErrorClass("Chat service failed.", 500);
     }
-
-    const chat = ai.chats.create({
-      model: modelId,
-      history: history || [],
-      config,
-    });
-
-    const result = await chat.sendMessage({
-      message,
-    });
-
-    if (!result || !result.text) {
-      throw new ErrorClass("AI returned empty response.", 502);
-    }
-
-    return { text: result.text };
-
-  } catch (error) {
-    console.error("Error in sendChatMessageService:", error);
-
-    if (error instanceof ErrorClass) {
-      throw error;
-    }
-
-    throw new ErrorClass("Chat service failed.", 500);
-  }
 };
 
 /**
  * Service: Get analysis history from database
  */
 export const getAnalysisHistoryService = async () => {
-  try {
-    const analyses = await Analysis.find()
-      .sort({ createdAt: -1 })
-      .limit(50);
+    try {
+        const analyses = await Analysis.find()
+            .populate("disease")
+            .sort({ createdAt: -1 })
+            .limit(50);
 
-    return analyses;
+        return analyses;
 
-  } catch (error) {
-    console.error("Database error in getAnalysisHistoryService:", error);
+    } catch (error) {
+        console.error("Database error in getAnalysisHistoryService:", error);
 
-    throw new ErrorClass("Failed to fetch analysis history.", 500);
-  }
+        throw new ErrorClass("Failed to fetch analysis history.", 500);
+    }
 };
 
 /**
  * Service: Get analysis by ID from database
  */
 export const getAnalysisByIdService = async (id) => {
-  try {
-    const analysis = await Analysis.findById(id);
-    return analysis;
-  } catch (error) {
-    console.error("Database error in getAnalysisByIdService:", error);
-    throw new ErrorClass("Failed to fetch analysis.", 500);
-  }
+    try {
+        const analysis = await Analysis.findById(id).populate("disease");
+        return analysis;
+    } catch (error) {
+        console.error("Database error in getAnalysisByIdService:", error);
+        throw new ErrorClass("Failed to fetch analysis.", 500);
+    }
 };
