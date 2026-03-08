@@ -27,6 +27,19 @@ const fieldSchema = new mongoose.Schema({
   },
 });
 
+const aboutDiseaseItemSchema = new mongoose.Schema({
+  heading: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+}, { _id: false });
+
 const diseaseSchema = new mongoose.Schema({
   diseaseId: {
     type: String,
@@ -50,6 +63,10 @@ const diseaseSchema = new mongoose.Schema({
   },
   fields: {
     type: [fieldSchema],
+    default: [],
+  },
+   aboutDiseaseItems: {
+    type: [aboutDiseaseItemSchema],
     default: [],
   },
   isActive: {
