@@ -12,7 +12,7 @@ const ai = new GoogleGenAI({ apiKey });
 /**
  * Service: Analyze medical image using Gemini AI
  */
-export const analyzeImageService = async (diseaseId, file, diseaseType) => {
+export const analyzeImageService = async (diseaseId, file, diseaseType, user) => {
     try {
         const base64Image = file.buffer.toString("base64");
         const mimeType = file.mimetype;
@@ -82,6 +82,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType) => {
                 disease: diseaseId,
                 diseaseType,
                 results: jsonResponse,
+                user: user._id
             });
 
             await analysis.save();
@@ -107,7 +108,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType) => {
  * Service: Analyze clinical data using Gemini AI
  */
 
-export const analyzeClinicalDataService = async (diseaseId, diseaseType, formData) => {
+export const analyzeClinicalDataService = async (diseaseId, diseaseType, formData,user) => {
     try {
         const modelId = "gemini-flash-latest";
 
@@ -159,6 +160,7 @@ export const analyzeClinicalDataService = async (diseaseId, diseaseType, formDat
         try {
             const analysis = new Analysis({
                 type: "clinical",
+                user: user._id,
                 disease: diseaseId,
                 diseaseType,
                 results: jsonResponse,

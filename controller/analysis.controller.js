@@ -21,7 +21,7 @@ export const analyzeImage = async (req, res) => {
     throw new ErrorClass("diseaseType and diseaseId are required.", 400);
   }
 
-  const result = await analyzeImageService(diseaseId, req.file, diseaseType);
+  const result = await analyzeImageService(diseaseId, req.file, diseaseType,req.user);
 
   res.status(200).json({
     success: true,
@@ -39,7 +39,7 @@ export const analyzeClinicalData = async (req, res) => {
     throw new ErrorClass("Missing diseaseType, formData, or diseaseId.", 400);
   }
 
-  const result = await analyzeClinicalDataService(diseaseId, diseaseType, formData);
+  const result = await analyzeClinicalDataService(diseaseId, diseaseType, formData,req.user);
 
   res.status(200).json({
     success: true,
