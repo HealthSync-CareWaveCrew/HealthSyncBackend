@@ -31,7 +31,7 @@ const getAllReviewsService = async (filters = {}) => {
     }
     
     if (filters.userEmail) {
-      query.user?.email = filters.userEmail;
+      query.user.email = filters.userEmail;
     }
 
     const reviews = await Review.find(query)
