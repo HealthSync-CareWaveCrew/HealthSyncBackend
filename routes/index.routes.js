@@ -8,7 +8,7 @@ import analysisRoutes from './analysis.routes.js';
 import reviewRoutes from './review.routes.js';
 import diseaseRoutes from './disease.routes.js';
 
-router.use("/review", reviewRoutes);
+router.use("/reviews", reviewRoutes);
 router.use("/", analysisRoutes);
 router.use("/diseases", diseaseRoutes);
 router.use('/auth', authRoutes);
