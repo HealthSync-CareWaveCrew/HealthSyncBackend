@@ -1,16 +1,22 @@
 import Review from "../models/Review.model.js";
 import ErrorClass from "../util/errorClass.js";
 
-const addReviewService = async (reviewData) => {
+const createReviewService = async (reviewData) => {
   try {
     const review = await Review.create(reviewData);
     return review;
   } catch (error) {
-    console.error("Database error in addReviewService:", error);
-    throw new ErrorClass("Failed to add review.", 500);
+    if (error.name === 'ValidationError') {
+      throw new ErrorClass(
+        'Validation Error',
+        400,
+        Object.values(error.errors).map((err) => err.message)
+      );
+    }
+    throw error;
   }
 };
 
 export default {
-  addReviewService,
+  createReviewService,
 };

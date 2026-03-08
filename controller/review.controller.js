@@ -1,34 +1,34 @@
 import reviewService from "../service/review.service.js";
 import ErrorClass from "../util/errorClass.js";
 
-const addReview = async (req, res) => {
-  const { user, rating, comment } = req.body;
+const createReview = async (req, res) => {
+  try {
+    const { user, rating, title, comment } = req.body;
 
-  //  Validation
-  if (!user) {
-    throw new ErrorClass("User ID is required.", 400);
+    // Validate required fields
+    if (!user || !rating || !title || !comment) {
+      throw new ErrorClass('All fields are required', 400);
+    }
+
+    const reviewData = {
+      user,
+      rating: Number(rating),
+      title,
+      comment,
+    };
+
+    const review = await reviewService.createReviewService(reviewData);
+
+    res.status(201).json({
+      success: true,
+      message: 'Review created successfully',
+      data: review,
+    });
+  } catch (error) {
+    throw error;
   }
-
-  if (!rating) {
-    throw new ErrorClass("Rating is required.", 400);
-  }
-
-  if (rating < 1 || rating > 5) {
-    throw new ErrorClass("Rating must be between 1 and 5.", 400);
-  }
-
-  if (!comment || comment.trim() === "") {
-    throw new ErrorClass("Comment is required.", 400);
-  }
-
-  const review = await reviewService.addReviewService(req.body);
-
-  res.status(201).json({
-    success: true,
-    data: review,
-  });
 };
 
 export default {
-    addReview
+    createReview
 }
