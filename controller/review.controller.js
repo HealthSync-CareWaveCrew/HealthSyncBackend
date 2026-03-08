@@ -50,7 +50,62 @@ const getAllReviews = async (req, res) => {
   }
 };
 
+const getAllReviewsAdmin = async (req, res) => {
+  try {
+    const reviews = await getAllReviewsAdminService();
+
+    res.status(200).json({
+      success: true,
+      message: 'All reviews retrieved successfully',
+      count: reviews.length,
+      data: reviews,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getReviewsByUser = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email) {
+      throw new ErrorClass('Email is required', 400);
+    }
+
+    const reviews = await reviewService.getReviewsByUserService(email);
+
+    res.status(200).json({
+      success: true,
+      message: 'User reviews retrieved successfully',
+      count: reviews.length,
+      data: reviews,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getReviewById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const review = await reviewService.getReviewByIdService(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Review retrieved successfully',
+      data: review,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default {
     createReview,
-    getAllReviews
+    getAllReviews,
+    getAllReviewsAdmin,
+    getReviewsByUser,
+    getReviewById
 }

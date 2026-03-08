@@ -44,7 +44,51 @@ const getAllReviewsService = async (filters = {}) => {
   }
 };
 
+const getAllReviewsAdminService = async () => {
+  try {
+    const reviews = await Review.find()
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    return reviews;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getReviewsByUserService = async (userEmail) => {
+  try {
+    const reviews = await Review.find({ 'user.email': userEmail })
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    return reviews;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getReviewByIdService = async (reviewId) => {
+  try {
+    const review = await Review.findById(reviewId);
+    
+    if (!review) {
+      throw new ErrorClass('Review not found', 404);
+    }
+    
+    return review;
+  } catch (error) {
+    if (error.name === 'CastError') {
+      throw new ErrorClass('Invalid review ID', 400);
+    }
+    throw error;
+  }
+};
+
 export default {
   createReviewService,
   getAllReviewsService,
+  getAllReviewsAdminService,
+  getReviewsByUserService,
+  getReviewByIdService
 };
