@@ -17,6 +17,34 @@ const createReviewService = async (reviewData) => {
   }
 };
 
+const getAllReviewsService = async (filters = {}) => {
+  try {
+    const query = { isVisible: true };
+    
+    // Add additional filters if provided
+    if (filters.isApproved !== undefined) {
+      query.isApproved = filters.isApproved;
+    }
+    
+    if (filters.rating) {
+      query.rating = filters.rating;
+    }
+    
+    if (filters.userEmail) {
+      query.user?.email = filters.userEmail;
+    }
+
+    const reviews = await Review.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    return reviews;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default {
   createReviewService,
+  getAllReviewsService,
 };

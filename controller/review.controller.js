@@ -29,6 +29,28 @@ const createReview = async (req, res) => {
   }
 };
 
+const getAllReviews = async (req, res) => {
+  try {
+    const { rating, approved } = req.query;
+    
+    const filters = {};
+    if (rating) filters.rating = Number(rating);
+    if (approved !== undefined) filters.isApproved = approved === 'true';
+
+    const reviews = await reviewService.getAllReviewsService(filters);
+
+    res.status(200).json({
+      success: true,
+      message: 'Reviews retrieved successfully',
+      count: reviews.length,
+      data: reviews,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 export default {
-    createReview
+    createReview,
+    getAllReviews
 }
