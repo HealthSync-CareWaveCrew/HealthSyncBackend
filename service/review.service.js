@@ -34,7 +34,7 @@ const getAllReviewsService = async (filters = {}) => {
       query.user.email = filters.userEmail;
     }
 
-    const reviews = await Review.find(query)
+    const reviews = await Review.find(query).populate('user', 'name email')
       .sort({ createdAt: -1 })
       .lean();
     
