@@ -15,22 +15,22 @@ const generateUniqueDiseaseId = async () => {
   while (!isUnique && attempts < maxAttempts) {
     // Generate timestamp in hexadecimal (uppercase)
     const timestamp = Date.now().toString(16).toUpperCase();
-    
+
     // Generate random alphanumeric string (uppercase)
-    const randomPart = Math.random().toString(36).substr(2, 9).toUpperCase();
-    
+    const randomPart = Math.random().toString(36).slice(2, 11).toUpperCase();
+
     // Combine to create unique ID: DS_[timestamp]_[random]
     diseaseId = `DS_${timestamp}_${randomPart}`;
-    
+
     // Check if this ID already exists in database
-    const existingDisease = await Disease.findOne({ 
-      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' } 
+    const existingDisease = await Disease.findOne({
+      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' },
     });
-    
+
     if (!existingDisease) {
       isUnique = true;
     }
-    
+
     attempts++;
   }
 
@@ -39,6 +39,23 @@ const generateUniqueDiseaseId = async () => {
   }
 
   return diseaseId;
+};
+
+const validateAboutDiseaseItems = (aboutDiseaseItems, errors) => {
+  if (aboutDiseaseItems === undefined) {
+    return;
+  }
+
+  if (!Array.isArray(aboutDiseaseItems)) {
+    errors.push('aboutDiseaseItems must be an array');
+    return;
+  }
+
+  aboutDiseaseItems.forEach((item, index) => {
+    if (!item || typeof item !== 'object' || !item.heading || !item.description) {
+      errors.push(`About Disease Item ${index} must have heading and description`);
+    }
+  });
 };
 
 /**
@@ -61,13 +78,15 @@ const validateDiseaseData = (data) => {
     errors.push('predictionType is required and must be either "image" or "text"');
   }
 
-  if (data.description && typeof data.description !== 'string') {
+  if (data.description !== undefined && typeof data.description !== 'string') {
     errors.push('description must be a string');
   }
 
-  if (data.fields && !Array.isArray(data.fields)) {
+  if (data.fields !== undefined && !Array.isArray(data.fields)) {
     errors.push('fields must be an array');
   }
+
+  validateAboutDiseaseItems(data.aboutDiseaseItems, errors);
 
   if (errors.length > 0) {
     throw new ErrorClass(`Validation failed: ${errors.join('; ')}`, 400);
@@ -80,8 +99,8 @@ const validateDiseaseData = (data) => {
 export const getAllDiseasesService = async () => {
   try {
     const diseases = await Disease.find({ isActive: true }).sort({ name: 1 });
-    
-    if (!diseases) {
+
+    if (!Array.isArray(diseases)) {
       throw new ErrorClass('Failed to retrieve diseases from database', 500);
     }
 
@@ -109,15 +128,15 @@ export const getDiseasesByTypeService = async (predictionType) => {
       throw new ErrorClass('Invalid prediction type. Must be "image" or "text".', 400);
     }
 
-    const diseases = await Disease.find({ 
-      predictionType: normalizedType, 
-      isActive: true 
+    const diseases = await Disease.find({
+      predictionType: normalizedType,
+      isActive: true,
     }).sort({ name: 1 });
 
-    if (!diseases) {
+    if (!Array.isArray(diseases)) {
       throw new ErrorClass('Failed to retrieve diseases from database', 500);
     }
-    
+
     return diseases;
   } catch (error) {
     if (error instanceof ErrorClass) {
@@ -138,15 +157,15 @@ export const getDiseaseByIdService = async (diseaseId) => {
     }
 
     // Case-insensitive search for the disease
-    const disease = await Disease.findOne({ 
-      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' }, 
-      isActive: true 
+    const disease = await Disease.findOne({
+      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' },
+      isActive: true,
     });
-    
+
     if (!disease) {
       throw new ErrorClass(`Disease with ID "${diseaseId}" not found.`, 404);
     }
-    
+
     return disease;
   } catch (error) {
     if (error instanceof ErrorClass) {
@@ -169,7 +188,7 @@ export const createDiseaseService = async (diseaseData) => {
 
     validateDiseaseData(diseaseData);
 
-    const { name, predictionType, description, fields } = diseaseData;
+    const { name, predictionType, description, fields, aboutDiseaseItems } = diseaseData;
     const normalizedType = predictionType.toLowerCase();
 
     // Validate fields structure if provided
@@ -198,6 +217,7 @@ export const createDiseaseService = async (diseaseData) => {
       predictionType: normalizedType,
       description: description ? description.trim() : '',
       fields: diseaseFields,
+      aboutDiseaseItems: Array.isArray(aboutDiseaseItems) ? aboutDiseaseItems : [],
     });
 
     const savedDisease = await disease.save();
@@ -210,7 +230,7 @@ export const createDiseaseService = async (diseaseData) => {
     // Handle MongoDB validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors)
-        .map(err => err.message)
+        .map((err) => err.message)
         .join('; ');
       throw new ErrorClass(`Validation error: ${messages}`, 400);
     }
@@ -238,10 +258,10 @@ export const updateDiseaseService = async (diseaseId, updateData) => {
     }
 
     // Case-insensitive search for the disease
-    const disease = await Disease.findOne({ 
-      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' } 
+    const disease = await Disease.findOne({
+      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' },
     });
-    
+
     if (!disease) {
       throw new ErrorClass(`Disease with ID "${diseaseId}" not found.`, 404);
     }
@@ -281,9 +301,22 @@ export const updateDiseaseService = async (diseaseId, updateData) => {
         if (!field.name || !field.label || !field.type) {
           throw new ErrorClass(`Field ${index} must have name, label, and type properties`, 400);
         }
+        if (!['text', 'number', 'select', 'radio', 'checkbox'].includes(field.type)) {
+          throw new ErrorClass(`Field ${index}: Invalid field type "${field.type}"`, 400);
+        }
       });
       // For image type, clear fields
       disease.fields = disease.predictionType === 'image' ? [] : updateData.fields;
+    }
+
+    // Update aboutDiseaseItems
+    if (updateData.aboutDiseaseItems !== undefined) {
+      const errors = [];
+      validateAboutDiseaseItems(updateData.aboutDiseaseItems, errors);
+      if (errors.length > 0) {
+        throw new ErrorClass(`Validation failed: ${errors.join('; ')}`, 400);
+      }
+      disease.aboutDiseaseItems = updateData.aboutDiseaseItems;
     }
 
     // Update isActive status
@@ -304,7 +337,7 @@ export const updateDiseaseService = async (diseaseId, updateData) => {
     // Handle MongoDB validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors)
-        .map(err => err.message)
+        .map((err) => err.message)
         .join('; ');
       throw new ErrorClass(`Validation error: ${messages}`, 400);
     }
@@ -323,10 +356,10 @@ export const deleteDiseaseService = async (diseaseId) => {
     }
 
     // Case-insensitive search for the disease
-    const disease = await Disease.findOne({ 
-      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' } 
+    const disease = await Disease.findOne({
+      diseaseId: { $regex: `^${diseaseId}$`, $options: 'i' },
     });
-    
+
     if (!disease) {
       throw new ErrorClass(`Disease with ID "${diseaseId}" not found.`, 404);
     }
@@ -338,11 +371,11 @@ export const deleteDiseaseService = async (diseaseId) => {
     disease.isActive = false;
     const deletedDisease = await disease.save();
     console.log(`Disease deleted successfully (soft delete): ${deletedDisease.diseaseId}`);
-    
-    return { 
+
+    return {
       success: true,
       message: 'Disease deleted successfully.',
-      data: deletedDisease
+      data: deletedDisease,
     };
   } catch (error) {
     if (error instanceof ErrorClass) {

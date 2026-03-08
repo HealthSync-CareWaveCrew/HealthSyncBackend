@@ -78,7 +78,7 @@ export const getDiseaseById = async (req, res) => {
  */
 export const createDisease = async (req, res) => {
   try {
-    const { diseaseId, name, predictionType, description, fields } = req.body;
+    const { diseaseId, name, predictionType, description, fields, aboutDiseaseItems } = req.body;
 
     // Basic validation
     if (!req.body || Object.keys(req.body).length === 0) {
@@ -91,6 +91,7 @@ export const createDisease = async (req, res) => {
       predictionType,
       description,
       fields,
+      aboutDiseaseItems,
     });
     
     res.status(201).json({
