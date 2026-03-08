@@ -102,10 +102,110 @@ const getReviewById = async (req, res) => {
   }
 };
 
+const updateReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating, title, comment, userEmail } = req.body;
+
+    const updateData = {};
+    if (rating !== undefined) updateData.rating = Number(rating);
+    if (title !== undefined) updateData.title = title;
+    if (comment !== undefined) updateData.comment = comment;
+
+    const review = await reviewService.updateReviewService(id, updateData, userEmail);
+
+    res.status(200).json({
+      success: true,
+      message: 'Review updated successfully',
+      data: review,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const toggleReviewVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isVisible } = req.body;
+
+    if (isVisible === undefined) {
+      throw new ErrorClass('isVisible field is required', 400);
+    }
+
+    const review = await reviewService.updateReviewVisibilityService(id, isVisible);
+
+    res.status(200).json({
+      success: true,
+      message: `Review ${isVisible ? 'shown' : 'hidden'} successfully`,
+      data: review,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const toggleReviewApproval = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isApproved } = req.body;
+
+    if (isApproved === undefined) {
+      throw new ErrorClass('isApproved field is required', 400);
+    }
+
+    const review = await reviewService.updateReviewApprovalService(id, isApproved);
+
+    res.status(200).json({
+      success: true,
+      message: `Review ${isApproved ? 'approved' : 'unapproved'} successfully`,
+      data: review,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const deleteReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userEmail } = req.body;
+
+    const result = await reviewService.deleteReviewService(id, userEmail);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+const getReviewStats = async (req, res) => {
+  try {
+    const stats = await reviewService.getReviewStatsService();
+
+    res.status(200).json({
+      success: true,
+      message: 'Review statistics retrieved successfully',
+      data: stats,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+
 export default {
     createReview,
     getAllReviews,
     getAllReviewsAdmin,
     getReviewsByUser,
-    getReviewById
+    getReviewById,
+    updateReview,
+    toggleReviewVisibility,
+    toggleReviewApproval,
+    deleteReview,
+    getReviewStats
 }
