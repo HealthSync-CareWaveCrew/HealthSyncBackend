@@ -3,7 +3,8 @@ import ErrorClass from "../util/errorClass.js";
 
 const createReview = async (req, res) => {
   try {
-    const { user, rating, title, comment } = req.body;
+    const { rating, title, comment } = req.body;
+    const user = req.user;
 
     // Validate required fields
     if (!user || !rating || !title || !comment) {
@@ -11,7 +12,7 @@ const createReview = async (req, res) => {
     }
 
     const reviewData = {
-      user,
+      user:user._id,
       rating: Number(rating),
       title,
       comment,
@@ -67,13 +68,13 @@ const getAllReviewsAdmin = async (req, res) => {
 
 const getReviewsByUser = async (req, res) => {
   try {
-    const { email } = req.params;
+    const user=req.user;
 
-    if (!email) {
-      throw new ErrorClass('Email is required', 400);
+    if (!user) {
+      throw new ErrorClass('user is required', 400);
     }
 
-    const reviews = await reviewService.getReviewsByUserService(email);
+    const reviews = await reviewService.getReviewsByUserService(user._id);
 
     res.status(200).json({
       success: true,
