@@ -21,6 +21,7 @@ const catchAsync = (fn) => {
 // Get current user profile
 export const getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id);
+  console.log("====================", user)
 
   res.status(200).json({
     status: 'success',
@@ -32,7 +33,8 @@ export const getMe = catchAsync(async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         createdAt: user.createdAt,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        provider: user.provider || (user.googleId ? 'google' : 'local')
       }
     }
   });
@@ -74,7 +76,12 @@ export const updateProfile = catchAsync(async (req, res, next) => {
 export const changePassword = catchAsync(async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
 
-  const user = await User.findById(req.user.id).select('+password');
+  const user = await User.findById(req.user.id).select('+password +googleId');
+
+  // Check if user is a Google user
+  if (user.googleId) {
+    return next(createError('Google authenticated users cannot change password through this method. Use Google account settings.', 400));
+  }
 
   // Check current password
   const isPasswordMatch = await user.comparePassword(currentPassword);
