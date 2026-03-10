@@ -8,7 +8,8 @@ import {
   forgotPassword,
   resetPassword,
   refreshToken,
-  logout
+  logout,
+  googleLogin  // Add this import
 } from '../controller/auth.controller.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { body } from 'express-validator';
@@ -52,6 +53,9 @@ const validatePasswordReset = [
     .notEmpty().withMessage('Password is required')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
 ];
+
+// Google Authentication
+router.post('/google', googleLogin);
 
 // Registration flow with OTP
 router.post('/send-registration-otp', validateRegistration, sendRegistrationOTP);
