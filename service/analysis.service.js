@@ -1,5 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 import Analysis from '../models/Analysis.model.js';
+import User from '../models/User.model.js';
+import Disease from '../models/Disease.model.js';
+import mongoose from 'mongoose';
 import ErrorClass from '../util/errorClass.js';
 
 // Initialize Gemini Client
@@ -232,12 +235,62 @@ export const sendChatMessageService = async (
 /**
  * Service: Get analysis history from database
  */
-export const getAnalysisHistoryService = async () => {
+export const getAnalysisHistoryService = async (requestUser, filters = {}) => {
     try {
-        const analyses = await Analysis.find()
-            .populate("disease")
+        const query = {
+            // isDeleted: false,
+        };
+
+        if (requestUser?.role !== 'admin') {
+            query.user = requestUser?._id;
+        }
+
+        if (filters.type) {
+            query.type = filters.type;
+        }
+
+        if (filters.date) {
+            const start = new Date(filters.date);
+            const end = new Date(filters.date);
+
+            if (!Number.isNaN(start.getTime())) {
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt = { $gte: start, $lte: end };
+            }
+        }
+
+        if (filters.diseaseName) {
+            const matchingDiseases = await Disease.find({
+                name: { $regex: filters.diseaseName, $options: 'i' },
+            }).select('_id');
+
+            query.$or = [
+                { diseaseType: { $regex: filters.diseaseName, $options: 'i' } },
+                { disease: { $in: matchingDiseases.map((d) => d._id) } },
+            ];
+        }
+
+        if (requestUser?.role === 'admin' && filters.user) {
+            if (mongoose.Types.ObjectId.isValid(filters.user)) {
+                query.user = filters.user;
+            } else {
+                const matchingUsers = await User.find({
+                    $or: [
+                        { name: { $regex: filters.user, $options: 'i' } },
+                        { email: { $regex: filters.user, $options: 'i' } },
+                    ],
+                }).select('_id');
+
+                query.user = { $in: matchingUsers.map((u) => u._id) };
+            }
+        }
+
+        const analyses = await Analysis.find(query)
+            .populate('disease')
+            .populate('user', 'name email role')
             .sort({ createdAt: -1 })
-            .limit(50);
+            .limit(200);
 
         return analyses;
 
@@ -251,12 +304,47 @@ export const getAnalysisHistoryService = async () => {
 /**
  * Service: Get analysis by ID from database
  */
-export const getAnalysisByIdService = async (id) => {
+export const getAnalysisByIdService = async (id, requestUser) => {
     try {
-        const analysis = await Analysis.findById(id).populate("disease");
+        const analysis = await Analysis.findOne({
+            _id: id,
+            isDeleted: false,
+        })
+            .populate('disease')
+            .populate('user', 'name email role');
+
+        if (!analysis) {
+            return null;
+        }
+
+        if (requestUser?.role !== 'admin' && analysis.user?._id?.toString() !== requestUser?._id?.toString()) {
+            throw new ErrorClass('You are not allowed to access this analysis.', 403);
+        }
+
         return analysis;
     } catch (error) {
+        if (error instanceof ErrorClass) {
+            throw error;
+        }
         console.error("Database error in getAnalysisByIdService:", error);
         throw new ErrorClass("Failed to fetch analysis.", 500);
+    }
+};
+
+/**
+ * Service: Soft delete analysis by ID
+ */
+export const softDeleteAnalysisService = async (id) => {
+    try {
+        const analysis = await Analysis.findOneAndUpdate(
+            { _id: id, isDeleted: false },
+            { isDeleted: true },
+            { new: true }
+        );
+
+        return analysis;
+    } catch (error) {
+        console.error('Database error in softDeleteAnalysisService:', error);
+        throw new ErrorClass('Failed to delete analysis.', 500);
     }
 };
