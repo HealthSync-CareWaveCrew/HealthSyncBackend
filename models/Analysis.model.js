@@ -28,6 +28,10 @@ const analysisSchema = new mongoose.Schema({
     reason: String,
   },
   formData: mongoose.Schema.Types.Mixed,
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -5,10 +5,11 @@ import {
     getAnalysisById,
     analyzeImage,
     analyzeClinicalData,
-    sendChatMessage
+    sendChatMessage,
+    deleteAnalysis,
 } from '../controller/analysis.controller.js';
 import { asyncHandler } from '../util/errorHandling.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -37,12 +38,18 @@ router.post('/chat', asyncHandler(sendChatMessage));
  * GET /analysis-history
  * Retrieves all analysis records
  */
-router.get('/analysis-history', asyncHandler(getAnalysisHistory));
+router.get('/analysis-history', protect, asyncHandler(getAnalysisHistory));
 
 /**
  * GET /analysis/:id
  * Retrieves a specific analysis by ID
  */
-router.get('/analysis/:id', asyncHandler(getAnalysisById));
+router.get('/analysis/:id', protect, asyncHandler(getAnalysisById));
+
+/**
+ * DELETE /analysis/:id
+ * Soft deletes an analysis record (admin only)
+ */
+router.delete('/analysis/:id', protect, restrictTo('admin'), asyncHandler(deleteAnalysis));
 
 export default router;

@@ -3,7 +3,8 @@ import {
     getAnalysisByIdService,
     analyzeImageService,
     analyzeClinicalDataService,
-    sendChatMessageService
+  sendChatMessageService,
+  softDeleteAnalysisService,
 } from '../service/analysis.service.js';
 import ErrorClass from '../util/errorClass.js';
 
@@ -73,11 +74,13 @@ export const sendChatMessage = async (req, res) => {
  * Controller: Get analysis history
  */
 export const getAnalysisHistory = async (req, res) => {
-  const analyses = await getAnalysisHistoryService();
-
-  if (!analyses || analyses.length === 0) {
-    throw new ErrorClass("No analysis history found.", 404);
-  }
+  const { type, diseaseName, user, date } = req.query;
+  const analyses = await getAnalysisHistoryService(req.user, {
+    type,
+    diseaseName,
+    user,
+    date,
+  });
 
   res.status(200).json({
     success: true,
@@ -92,7 +95,7 @@ export const getAnalysisHistory = async (req, res) => {
 export const getAnalysisById = async (req, res) => {
   const { id } = req.params;
 
-  const analysis = await getAnalysisByIdService(id);
+  const analysis = await getAnalysisByIdService(id, req.user);
 
   if (!analysis) {
     throw new ErrorClass("Analysis not found.", 404);
@@ -101,5 +104,23 @@ export const getAnalysisById = async (req, res) => {
   res.status(200).json({
     success: true,
     data: analysis,
+  });
+};
+
+/**
+ * Controller: Soft delete analysis (admin only)
+ */
+export const deleteAnalysis = async (req, res) => {
+  const { id } = req.params;
+
+  const analysis = await softDeleteAnalysisService(id);
+
+  if (!analysis) {
+    throw new ErrorClass('Analysis not found.', 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Analysis deleted successfully.',
   });
 };
