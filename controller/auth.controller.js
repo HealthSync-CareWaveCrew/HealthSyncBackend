@@ -2,8 +2,118 @@ import { generateOTP, saveOTP, verifyOTP, sendOTPEmail } from '../service/email.
 import User from '../models/User.model.js';
 import jwt from 'jsonwebtoken';
 import OTP from '../models/OTP.model.js'; 
+import { OAuth2Client } from 'google-auth-library';
 
-// Send Registration OTP
+// Initialize Google OAuth client
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Helper function to generate JWT token
+// Helper function to generate JWT token
+const generateToken = (user) => {
+  return jwt.sign(
+    { 
+      id: user._id, 
+      email: user.email, 
+      role: user.role,
+      provider: user.provider 
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+};
+
+// GOOGLE LOGIN
+export const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    console.log('🔐 Google login attempt with credential');
+    
+    if (!credential) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Google credential is required'
+      });
+    }
+
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId, picture } = payload;
+    
+    console.log('✅ Google token verified for:', email);
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user if doesn't exist
+      console.log('📝 Creating new user from Google account');
+      
+      // IMPORTANT: Don't include password field at all for Google users
+      user = new User({
+        email,
+        name,
+        googleId,
+        avatar: picture,
+        isEmailVerified: true,
+        provider: 'google'
+        // No password field - let the schema's conditional validation handle it
+      });
+      
+      // Save with validation skipped for password
+      await user.save({ validateBeforeSave: false });
+      
+      console.log('✅ New user created:', user._id);
+    } else {
+      // Update existing user with Google info if not already linked
+      if (!user.googleId) {
+        console.log('🔄 Linking Google account to existing user');
+        user.googleId = googleId;
+        user.avatar = user.avatar || picture;
+        user.isEmailVerified = true;
+        user.provider = user.provider || 'google';
+        
+        // Save with validation skipped for password
+        await user.save({ validateBeforeSave: false });
+      }
+    }
+
+    // Generate JWT token
+    const token = generateToken(user);
+
+    // Update last login
+    user.lastLogin = Date.now();
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isEmailVerified: user.isEmailVerified,
+        provider: user.provider || 'google'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Google login error:', error);
+    res.status(401).json({
+      status: 'fail',
+      message: 'Google authentication failed: ' + error.message
+    });
+  }
+};
+
 // Send Registration OTP
 export const sendRegistrationOTP = async (req, res) => {
   try {
@@ -21,12 +131,12 @@ export const sendRegistrationOTP = async (req, res) => {
     // Generate OTP
     const otp = generateOTP();
     
-    // Save OTP temporarily with user data - FIXED THIS LINE
+    // Save OTP temporarily with user data
     await saveOTP(
-      email,                          // email (string)
-      otp,                            // otp (string)
-      'registration',                  // type (string)
-      { userData: { name, email, password } }  // data (object)
+      email,
+      otp,
+      'registration',
+      { userData: { name, email, password } }
     );
     
     // Send OTP email
@@ -93,7 +203,8 @@ export const verifyRegistrationOTP = async (req, res) => {
       name: finalName,
       email: email,
       password: finalPassword,
-      isEmailVerified: true 
+      isEmailVerified: true,
+      provider: 'local'
     });
     console.log('✅ User created:', user._id);
     
@@ -112,7 +223,8 @@ export const verifyRegistrationOTP = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        provider: user.provider
       }
     });
     
@@ -140,6 +252,14 @@ export const sendLoginOTP = async (req, res) => {
       return res.status(401).json({
         status: 'fail',
         message: 'Invalid credentials'
+      });
+    }
+
+    // Check if user signed up with Google
+    if (user.provider === 'google') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'This account uses Google Sign-In. Please login with Google.'
       });
     }
     
@@ -193,15 +313,13 @@ export const sendLoginOTP = async (req, res) => {
 };
 
 // Verify Login OTP
-// Verify Login OTP
 export const verifyLoginOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
     
     console.log('🔍 VERIFY LOGIN - Request:', { email, otp });
     
-    // IMPORTANT: Specify the type as 'login'
-    const verification = await verifyOTP(email, otp, 'login'); // Add 'login' type here!
+    const verification = await verifyOTP(email, otp, 'login');
     
     console.log('✅ Verification result:', verification);
     
@@ -246,7 +364,8 @@ export const verifyLoginOTP = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        provider: user.provider
       }
     });
     
@@ -272,11 +391,19 @@ export const forgotPassword = async (req, res) => {
         message: 'No user found with this email'
       });
     }
+
+    // Check if user signed up with Google
+    if (user.provider === 'google') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'This account uses Google Sign-In. Password reset is not available.'
+      });
+    }
     
     // Generate OTP
     const otp = generateOTP();
     
-    // Save OTP - FIXED
+    // Save OTP
     await saveOTP(
       email,
       otp,
@@ -458,7 +585,17 @@ export const getCurrentUser = async (req, res) => {
     
     res.status(200).json({
       status: 'success',
-      user
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isEmailVerified: user.isEmailVerified,
+        provider: user.provider,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }
     });
   } catch (error) {
     console.error('Get current user error:', error);
@@ -481,9 +618,17 @@ export const updateProfile = async (req, res) => {
         message: 'User not found'
       });
     }
+
+    // Check if email is being changed and if it's a Google account
+    if (email && email !== user.email && user.provider === 'google') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Email cannot be changed for Google accounts'
+      });
+    }
     
     if (name) user.name = name;
-    if (email) user.email = email;
+    if (email && user.provider !== 'google') user.email = email;
     
     await user.save();
     
@@ -494,7 +639,9 @@ export const updateProfile = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        avatar: user.avatar,
+        provider: user.provider
       }
     });
   } catch (error) {
@@ -511,11 +658,19 @@ export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select('+password');
     if (!user) {
       return res.status(404).json({
         status: 'fail',
         message: 'User not found'
+      });
+    }
+
+    // Check if user is using Google auth
+    if (user.provider === 'google') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Password change is not available for Google accounts'
       });
     }
     

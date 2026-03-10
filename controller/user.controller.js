@@ -1,5 +1,6 @@
 import User from '../models/User.model.js';
 import Token from '../models/Token.model.js';
+import { generateOTP, saveOTP, sendOTPEmail, verifyOTP  } from '../service/email.service.js';
 
 // Helper function to create AppError
 const createError = (message, statusCode) => {
@@ -20,6 +21,7 @@ const catchAsync = (fn) => {
 // Get current user profile
 export const getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id);
+  console.log("====================", user)
 
   res.status(200).json({
     status: 'success',
@@ -31,7 +33,8 @@ export const getMe = catchAsync(async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         createdAt: user.createdAt,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        provider: user.provider || (user.googleId ? 'google' : 'local')
       }
     }
   });
@@ -73,7 +76,12 @@ export const updateProfile = catchAsync(async (req, res, next) => {
 export const changePassword = catchAsync(async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
 
-  const user = await User.findById(req.user.id).select('+password');
+  const user = await User.findById(req.user.id).select('+password +googleId');
+
+  // Check if user is a Google user
+  if (user.googleId) {
+    return next(createError('Google authenticated users cannot change password through this method. Use Google account settings.', 400));
+  }
 
   // Check current password
   const isPasswordMatch = await user.comparePassword(currentPassword);
@@ -206,5 +214,94 @@ export const deleteUser = catchAsync(async (req, res, next) => {
   res.status(204).json({
     status: 'success',
     data: null
+  });
+});
+
+// Send OTP for email change
+export const sendEmailChangeOTP = catchAsync(async (req, res, next) => {
+  const { newEmail } = req.body;
+
+  if (!newEmail) {
+    return next(createError('New email is required', 400));
+  }
+
+  // Check if email is already taken
+  const existingUser = await User.findOne({ email: newEmail });
+  if (existingUser) {
+    return next(createError('Email already in use', 400));
+  }
+
+  // Generate OTP
+  const otp = generateOTP();
+  
+  // Save OTP with user data
+  await saveOTP(
+    newEmail, 
+    otp, 
+    'email-change',
+    { 
+      userId: req.user.id,
+      userData: {
+        oldEmail: req.user.email,
+        newEmail: newEmail
+      }
+    }
+  );
+
+  // Send OTP to new email
+  const emailResult = await sendOTPEmail(newEmail, otp, 'email-change');
+  
+  if (!emailResult.success) {
+    return next(createError('Failed to send OTP email', 500));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'OTP sent to new email address'
+  });
+});
+
+// Verify OTP and update email
+export const verifyEmailChangeOTP = catchAsync(async (req, res, next) => {
+  const { newEmail, otp } = req.body;
+
+  if (!newEmail || !otp) {
+    return next(createError('New email and OTP are required', 400));
+  }
+
+  // Verify OTP
+  const verification = await verifyOTP(newEmail, otp, 'email-change');
+  
+  if (!verification.valid) {
+    return next(createError(verification.message || 'Invalid OTP', 400));
+  }
+
+  // Check if email is still available
+  const existingUser = await User.findOne({ email: newEmail });
+  if (existingUser && existingUser._id.toString() !== req.user.id) {
+    return next(createError('Email already taken', 400));
+  }
+
+  // Update user email
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { 
+      email: newEmail,
+      isEmailVerified: true // Auto-verify since they confirmed via OTP
+    },
+    { new: true }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified
+      }
+    }
   });
 });

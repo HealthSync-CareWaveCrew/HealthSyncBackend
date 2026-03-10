@@ -12,7 +12,11 @@ router.patch('/update-profile', userController.updateProfile);
 router.patch('/change-password', userController.changePassword);
 router.delete('/delete-account', userController.deleteAccount);
 
-// // Admin only routes
+// Email change routes - Add these new routes
+router.post('/send-email-change-otp', userController.sendEmailChangeOTP);
+router.post('/verify-email-change-otp', userController.verifyEmailChangeOTP);
+
+// Admin only routes (commented for now)
 // router.use(restrictTo('admin'));
 // router.get('/', userController.getAllUsers);
 // router.get('/:id', userController.getUser);
