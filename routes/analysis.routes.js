@@ -8,6 +8,7 @@ import {
     sendChatMessage
 } from '../controller/analysis.controller.js';
 import { asyncHandler } from '../util/errorHandling.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,13 +19,13 @@ const upload = multer({ storage: multer.memoryStorage() });
  * POST /analyze-image
  * Analyzes medical images for disease detection
  */
-router.post('/analyze-image', upload.single('image'), asyncHandler(analyzeImage));
+router.post('/analyze-image', protect, upload.single('image'), asyncHandler(analyzeImage));
 
 /**
  * POST /analyze-clinical-data
  * Analyzes clinical data for disease prediction
  */
-router.post('/analyze-clinical-data', asyncHandler(analyzeClinicalData));
+router.post('/analyze-clinical-data', protect, asyncHandler(analyzeClinicalData));
 
 /**
  * POST /chat

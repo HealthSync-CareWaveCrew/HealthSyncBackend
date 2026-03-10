@@ -56,9 +56,9 @@ const getAllReviewsAdminService = async () => {
   }
 };
 
-const getReviewsByUserService = async (userEmail) => {
+const getReviewsByUserService = async (userId) => {
   try {
-    const reviews = await Review.find({ 'user.email': userEmail })
+    const reviews = await Review.find({ 'user': userId })
       .sort({ createdAt: -1 })
       .lean();
     
