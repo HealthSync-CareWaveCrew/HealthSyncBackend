@@ -21,9 +21,18 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please add a password'],
+    required: [
+      function() {
+        // Password is required only if googleId doesn't exist
+        return !this.googleId;
+      }, 
+      'Please add a password'
+    ],
     minlength: [8, 'Password must be at least 8 characters'],
     select: false
+  },
+  googleId: {
+    type: String,
   },
   role: {
     type: String,
@@ -51,9 +60,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Encrypt password before saving
+// Encrypt password before saving - only if password is modified and exists
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  // Skip if password is not modified or doesn't exist (Google users)
+  if (!this.isModified('password') || !this.password) return next();
   
   try {
     const salt = await bcrypt.genSalt(10);
@@ -64,16 +74,21 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Update passwordChangedAt when password is changed
+// Update passwordChangedAt when password is changed - only if password exists
 userSchema.pre('save', function(next) {
-  if (!this.isModified('password') || this.isNew) return next();
+  if (!this.isModified('password') || this.isNew || !this.password) return next();
   this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
-// Compare entered password with hashed password
+// Compare entered password with hashed password - only for non-Google users
 userSchema.methods.comparePassword = async function(enteredPassword) {
   try {
+    // If user has no password (Google user), return false
+    if (!this.password) {
+      return false;
+    }
+    
     if (!enteredPassword || !this.password) {
       console.error('Missing password for comparison:', { 
         entered: !!enteredPassword, 
@@ -88,8 +103,13 @@ userSchema.methods.comparePassword = async function(enteredPassword) {
   }
 };
 
-// Generate password reset token
+// Generate password reset token - only for users with password
 userSchema.methods.generatePasswordResetToken = function() {
+  // Don't generate reset token for Google users
+  if (!this.password) {
+    return null;
+  }
+  
   const resetToken = crypto.randomBytes(32).toString('hex');
   
   this.passwordResetToken = crypto
