@@ -116,7 +116,8 @@ export const verifyOTP = async (email, enteredOtp, type) => {
 };
 
 // Send OTP email
-export const sendOTPEmail = async (email, otp, type = 'verification') => {
+// Send OTP email - add data parameter
+export const sendOTPEmail = async (email, otp, type = 'verification', data = {}) => {
   let subject, html;
   
   const appName = 'HealthSync';
@@ -259,6 +260,54 @@ export const sendOTPEmail = async (email, otp, type = 'verification') => {
             <!-- Footer -->
             <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
               <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      break;
+
+    case 'email-change':
+      subject = `${appName} - Verify Your New Email`;
+      html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Change Verification</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f8;">
+          <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">${appName}</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Email Change Verification</p>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 40px 30px;">
+              <h2 style="color: #1a1a1a; margin-top: 0;">Verify Your New Email</h2>
+              <p style="color: #666; line-height: 1.6;">You requested to change your email address to this one. Use the following verification code to confirm:</p>
+              
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
+                <h1 style="font-size: 48px; letter-spacing: 8px; color: white; margin: 0; font-family: monospace;">${otp}</h1>
+              </div>
+              
+              <p style="color: #666; line-height: 1.6;">This code will expire in <strong>5 minutes</strong>.</p>
+              
+              <div style="background-color: #e7f3ff; border-left: 4px solid #2196f3; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                <p style="color: #0a58ca; margin: 0; font-size: 14px;">
+                  <strong>🔐 Important:</strong> If you didn't request this email change, please secure your account immediately.
+                </p>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
+              <p style="color: #999; font-size: 12px; margin: 5px 0;">Your old email: ${data?.oldEmail || 'Not provided'}</p>
             </div>
           </div>
         </body>
