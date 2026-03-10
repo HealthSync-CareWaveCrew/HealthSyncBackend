@@ -53,7 +53,7 @@ const getAllReviews = async (req, res) => {
 
 const getAllReviewsAdmin = async (req, res) => {
   try {
-    const reviews = await getAllReviewsAdminService();
+    const reviews = await reviewService.getAllReviewsAdminService();
 
     res.status(200).json({
       success: true,
