@@ -28,6 +28,14 @@ const analysisSchema = new mongoose.Schema({
     reason: String,
   },
   formData: mongoose.Schema.Types.Mixed,
+  inputImageUrl: {
+    type: String,
+    default: null,
+  },
+  inputImagePublicId: {
+    type: String,
+    default: null,
+  },
   isDeleted: {
     type: Boolean,
     default: false,
