@@ -8,9 +8,15 @@ import { OAuth2Client } from 'google-auth-library';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper function to generate JWT token
+// Helper function to generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { 
+      id: user._id, 
+      email: user.email, 
+      role: user.role,
+      provider: user.provider 
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -47,15 +53,21 @@ export const googleLogin = async (req, res) => {
     if (!user) {
       // Create new user if doesn't exist
       console.log('📝 Creating new user from Google account');
-      user = await User.create({
+      
+      // IMPORTANT: Don't include password field at all for Google users
+      user = new User({
         email,
         name,
         googleId,
         avatar: picture,
-        isEmailVerified: true, // Google accounts are pre-verified
-        provider: 'google',
-        password: null // No password for Google users
+        isEmailVerified: true,
+        provider: 'google'
+        // No password field - let the schema's conditional validation handle it
       });
+      
+      // Save with validation skipped for password
+      await user.save({ validateBeforeSave: false });
+      
       console.log('✅ New user created:', user._id);
     } else {
       // Update existing user with Google info if not already linked
@@ -65,7 +77,9 @@ export const googleLogin = async (req, res) => {
         user.avatar = user.avatar || picture;
         user.isEmailVerified = true;
         user.provider = user.provider || 'google';
-        await user.save();
+        
+        // Save with validation skipped for password
+        await user.save({ validateBeforeSave: false });
       }
     }
 
@@ -87,7 +101,7 @@ export const googleLogin = async (req, res) => {
         role: user.role,
         avatar: user.avatar,
         isEmailVerified: user.isEmailVerified,
-        provider: user.provider
+        provider: user.provider || 'google'
       }
     });
 
