@@ -37,8 +37,6 @@ export const generateOTP = () => {
 };
 
 // Save OTP to database with expiry (5 minutes)
-// Save OTP to database with expiry (5 minutes)
-// Save OTP to database with expiry (5 minutes)
 export const saveOTP = async (email, otp, type, data = {}) => {
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
   
@@ -115,13 +113,20 @@ export const verifyOTP = async (email, enteredOtp, type) => {
   };
 };
 
-// Send OTP email
 // Send OTP email - add data parameter
 export const sendOTPEmail = async (email, otp, type = 'verification', data = {}) => {
   let subject, html;
   
   const appName = 'HealthSync';
   const currentYear = new Date().getFullYear();
+  
+  // Color scheme
+  const colors = {
+    primary1: '#E36A6A',   // primary-1
+    primary2: '#FFB2B2',   // primary-2
+    primary3: '#FFF2D0',   // primary-3
+    primary4: '#FFFBF1'    // primary-4
+  };
   
   // Create email template based on type
   switch(type) {
@@ -137,33 +142,34 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
         </head>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f8;">
           <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <!-- Header with primary-1 -->
+            <div style="background: ${colors.primary1}; padding: 30px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">${appName}</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Email Verification</p>
             </div>
             
             <!-- Body -->
-            <div style="padding: 40px 30px;">
+            <div style="padding: 40px 30px; background-color: ${colors.primary4};">
               <h2 style="color: #1a1a1a; margin-top: 0;">Hello!</h2>
               <p style="color: #666; line-height: 1.6;">Thank you for registering with ${appName}. Please use the following verification code to complete your registration:</p>
               
-              <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
+              <!-- OTP Box with primary-1 -->
+              <div style="background: ${colors.primary1}; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
                 <h1 style="font-size: 48px; letter-spacing: 8px; color: white; margin: 0; font-family: monospace;">${otp}</h1>
               </div>
               
               <p style="color: #666; line-height: 1.6;">This code will expire in <strong>5 minutes</strong>.</p>
               
-              <div style="background-color: #f8f9fa; border-left: 4px solid #4f46e5; padding: 15px; margin: 30px 0; border-radius: 4px;">
+              <!-- Info box with primary-3 -->
+              <div style="background-color: ${colors.primary3}; border-left: 4px solid ${colors.primary1}; padding: 15px; margin: 30px 0; border-radius: 4px;">
                 <p style="color: #666; margin: 0; font-size: 14px;">
                   <strong>⚠️ Security Tip:</strong> Never share this OTP with anyone. Our team will never ask for your verification code.
                 </p>
               </div>
             </div>
             
-            <!-- Footer -->
-            <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <!-- Footer with primary-4 -->
+            <div style="background-color: ${colors.primary4}; padding: 20px 30px; text-align: center; border-top: 1px solid ${colors.primary2};">
               <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
               <p style="color: #999; font-size: 12px; margin: 5px 0;">If you didn't request this, please ignore this email.</p>
             </div>
@@ -185,33 +191,34 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
         </head>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f8;">
           <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <!-- Header with primary-1 -->
+            <div style="background: ${colors.primary1}; padding: 30px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">${appName}</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Login Verification</p>
             </div>
             
-            <!-- Body -->
-            <div style="padding: 40px 30px;">
+            <!-- Body with primary-4 -->
+            <div style="padding: 40px 30px; background-color: ${colors.primary4};">
               <h2 style="color: #1a1a1a; margin-top: 0;">Login Request</h2>
               <p style="color: #666; line-height: 1.6;">We received a login request for your ${appName} account. Use this code to complete your login:</p>
               
-              <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
+              <!-- OTP Box with primary-1 -->
+              <div style="background: ${colors.primary1}; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
                 <h1 style="font-size: 48px; letter-spacing: 8px; color: white; margin: 0; font-family: monospace;">${otp}</h1>
               </div>
               
               <p style="color: #666; line-height: 1.6;">This code will expire in <strong>5 minutes</strong>.</p>
               
-              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                <p style="color: #856404; margin: 0; font-size: 14px;">
+              <!-- Warning box with primary-3 -->
+              <div style="background-color: ${colors.primary3}; border-left: 4px solid ${colors.primary1}; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                <p style="color: #666; margin: 0; font-size: 14px;">
                   <strong>⚠️ Didn't request this?</strong> If you didn't attempt to login, please secure your account immediately.
                 </p>
               </div>
             </div>
             
-            <!-- Footer -->
-            <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <!-- Footer with primary-4 -->
+            <div style="background-color: ${colors.primary4}; padding: 20px 30px; text-align: center; border-top: 1px solid ${colors.primary2};">
               <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
             </div>
           </div>
@@ -232,33 +239,34 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
         </head>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f8;">
           <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <!-- Header with primary-1 -->
+            <div style="background: ${colors.primary1}; padding: 30px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">${appName}</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Password Reset</p>
             </div>
             
-            <!-- Body -->
-            <div style="padding: 40px 30px;">
+            <!-- Body with primary-4 -->
+            <div style="padding: 40px 30px; background-color: ${colors.primary4};">
               <h2 style="color: #1a1a1a; margin-top: 0;">Reset Your Password</h2>
               <p style="color: #666; line-height: 1.6;">We received a request to reset your password. Use this code to proceed:</p>
               
-              <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
+              <!-- OTP Box with primary-1 -->
+              <div style="background: ${colors.primary1}; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
                 <h1 style="font-size: 48px; letter-spacing: 8px; color: white; margin: 0; font-family: monospace;">${otp}</h1>
               </div>
               
               <p style="color: #666; line-height: 1.6;">This code will expire in <strong>5 minutes</strong>.</p>
               
-              <div style="background-color: #e7f3ff; border-left: 4px solid #2196f3; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                <p style="color: #0a58ca; margin: 0; font-size: 14px;">
+              <!-- Info box with primary-3 -->
+              <div style="background-color: ${colors.primary3}; border-left: 4px solid ${colors.primary1}; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                <p style="color: #666; margin: 0; font-size: 14px;">
                   <strong>🔐 Secure Reset:</strong> If you didn't request a password reset, please ignore this email and ensure your account is secure.
                 </p>
               </div>
             </div>
             
-            <!-- Footer -->
-            <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <!-- Footer with primary-4 -->
+            <div style="background-color: ${colors.primary4}; padding: 20px 30px; text-align: center; border-top: 1px solid ${colors.primary2};">
               <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
             </div>
           </div>
@@ -279,33 +287,34 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
         </head>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f8;">
           <div style="max-width: 600px; margin: 20px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center;">
+            <!-- Header with primary-1 -->
+            <div style="background: ${colors.primary1}; padding: 30px; text-align: center;">
               <h1 style="color: white; margin: 0; font-size: 28px;">${appName}</h1>
               <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0;">Email Change Verification</p>
             </div>
             
-            <!-- Body -->
-            <div style="padding: 40px 30px;">
+            <!-- Body with primary-4 -->
+            <div style="padding: 40px 30px; background-color: ${colors.primary4};">
               <h2 style="color: #1a1a1a; margin-top: 0;">Verify Your New Email</h2>
               <p style="color: #666; line-height: 1.6;">You requested to change your email address to this one. Use the following verification code to confirm:</p>
               
-              <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
+              <!-- OTP Box with primary-1 -->
+              <div style="background: ${colors.primary1}; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
                 <h1 style="font-size: 48px; letter-spacing: 8px; color: white; margin: 0; font-family: monospace;">${otp}</h1>
               </div>
               
               <p style="color: #666; line-height: 1.6;">This code will expire in <strong>5 minutes</strong>.</p>
               
-              <div style="background-color: #e7f3ff; border-left: 4px solid #2196f3; padding: 15px; margin: 30px 0; border-radius: 4px;">
-                <p style="color: #0a58ca; margin: 0; font-size: 14px;">
+              <!-- Info box with primary-3 -->
+              <div style="background-color: ${colors.primary3}; border-left: 4px solid ${colors.primary1}; padding: 15px; margin: 30px 0; border-radius: 4px;">
+                <p style="color: #666; margin: 0; font-size: 14px;">
                   <strong>🔐 Important:</strong> If you didn't request this email change, please secure your account immediately.
                 </p>
               </div>
             </div>
             
-            <!-- Footer -->
-            <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+            <!-- Footer with primary-4 -->
+            <div style="background-color: ${colors.primary4}; padding: 20px 30px; text-align: center; border-top: 1px solid ${colors.primary2};">
               <p style="color: #999; font-size: 14px; margin: 5px 0;">© ${currentYear} ${appName}. All rights reserved.</p>
               <p style="color: #999; font-size: 12px; margin: 5px 0;">Your old email: ${data?.oldEmail || 'Not provided'}</p>
             </div>
@@ -317,7 +326,12 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
       
     default:
       subject = `${appName} - Verification Code`;
-      html = `Your verification code is: ${otp}`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: ${colors.primary4};">
+          <h2 style="color: ${colors.primary1};">${appName}</h2>
+          <p>Your verification code is: <strong style="color: ${colors.primary1};">${otp}</strong></p>
+        </div>
+      `;
   }
   
   const mailOptions = {
