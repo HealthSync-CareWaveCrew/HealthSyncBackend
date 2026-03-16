@@ -43,7 +43,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType, user) =>
             "match": boolean,
             "reason": "Reason for mismatch (only if match is false)",
             "disease": "Predicted condition/type (e.g., 'Meningioma', 'Diabetic Retinopathy', 'Normal')",
-            "confidence": "e.g., 95%",
+            "confidence": "e.g., High 95%",
             "description": "Detailed description of findings..."
         }
     `;
@@ -243,7 +243,7 @@ export const sendChatMessageService = async (
 export const getAnalysisHistoryService = async (requestUser, filters = {}) => {
     try {
         const query = {
-            // isDeleted: false,
+            isDeleted: false,
         };
 
         if (requestUser?.role !== 'admin') {
