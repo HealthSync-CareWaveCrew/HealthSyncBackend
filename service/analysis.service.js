@@ -4,6 +4,7 @@ import User from '../models/User.model.js';
 import Disease from '../models/Disease.model.js';
 import mongoose from 'mongoose';
 import ErrorClass from '../util/errorClass.js';
+import { uploadImageBufferToCloudinary } from './cloudinary.service.js';
 
 // Initialize Gemini Client
 const apiKey = process.env.GEMINI_API_KEY;
@@ -17,6 +18,8 @@ const ai = new GoogleGenAI({ apiKey });
  */
 export const analyzeImageService = async (diseaseId, file, diseaseType, user) => {
     try {
+        const uploadedImage = await uploadImageBufferToCloudinary(file);
+
         const base64Image = file.buffer.toString("base64");
         const mimeType = file.mimetype;
 
@@ -40,7 +43,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType, user) =>
             "match": boolean,
             "reason": "Reason for mismatch (only if match is false)",
             "disease": "Predicted condition/type (e.g., 'Meningioma', 'Diabetic Retinopathy', 'Normal')",
-            "confidence": "e.g., 95%",
+            "confidence": "e.g., High 95%",
             "description": "Detailed description of findings..."
         }
     `;
@@ -85,7 +88,9 @@ export const analyzeImageService = async (diseaseId, file, diseaseType, user) =>
                 disease: diseaseId,
                 diseaseType,
                 results: jsonResponse,
-                user: user._id
+                user: user._id,
+                inputImageUrl: uploadedImage.secure_url,
+                inputImagePublicId: uploadedImage.public_id,
             });
 
             await analysis.save();
@@ -238,7 +243,7 @@ export const sendChatMessageService = async (
 export const getAnalysisHistoryService = async (requestUser, filters = {}) => {
     try {
         const query = {
-            // isDeleted: false,
+            isDeleted: false,
         };
 
         if (requestUser?.role !== 'admin') {
