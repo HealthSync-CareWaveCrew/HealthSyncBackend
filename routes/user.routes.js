@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import * as userController from '../controller/user.controller.js'
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
+import { subscribe } from '../controller/subscriber.controller.js';
 
 // All user routes require authentication
 router.use(protect);
@@ -23,5 +24,6 @@ router.post('/verify-email-change-otp', userController.verifyEmailChangeOTP);
 // router.patch('/:id/role', userController.updateUserRole);
 // router.patch('/:id/toggle-status', userController.toggleUserStatus);
 // router.delete('/:id', userController.deleteUser);
+router.post('/subscribe', subscribe);
 
 export default router;

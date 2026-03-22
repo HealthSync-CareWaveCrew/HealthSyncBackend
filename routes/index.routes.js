@@ -1,5 +1,8 @@
 import express from 'express';
 const router = express.Router();
+import { subscribe } from '../controller/subscriber.controller.js';
+
+
 
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
@@ -13,6 +16,7 @@ router.use("/", analysisRoutes);
 router.use("/diseases", diseaseRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.post('/subscribe', subscribe);
 // router.use('/admin', adminRoutes);
 
 // Test route
@@ -23,5 +27,6 @@ router.get('/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+router.post('/subscribe', subscribe);
 
 export default router;

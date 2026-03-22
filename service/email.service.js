@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import OTP from '../models/OTP.model.js';
 
+
 // Create transporter with explicit SMTP settings
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',     // Gmail SMTP server [citation:1][citation:2]
@@ -348,5 +349,38 @@ export const sendOTPEmail = async (email, otp, type = 'verification', data = {})
   } catch (error) {
     console.error('❌ Email send error:', error);
     return { success: false, error: error.message };
+  }
+};
+
+
+
+
+
+// Send subscription email
+export const sendSubscriptionEmail = async (email) => {
+  try {
+    const subject = `Welcome to HealthSync Newsletter!`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #E36A6A;">HealthSync AI</h2>
+        <p>Thank you for subscribing to our newsletter!</p>
+        <p>You'll now receive weekly insights on predictive healthcare, AI diagnostics, and wellness tips.</p>
+        <hr />
+        <p style="font-size: 12px; color: #888;">If you didn't subscribe, please ignore this email.</p>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: `"${process.env.APP_NAME || 'HealthSync'}" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject,
+      html,
+    });
+
+    console.log(`✅ Subscription email sent to ${email}: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    console.error('❌ Failed to send subscription email:', error);
+    throw error; // important to propagate error to controller
   }
 };
