@@ -33,6 +33,8 @@ app.use('/api', apiRoutes);
 // Global error handler MUST be last
 app.use(globalErrorHandling);
 
+
+
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
