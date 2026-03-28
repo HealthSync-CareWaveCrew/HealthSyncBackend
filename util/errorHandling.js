@@ -33,7 +33,7 @@ export const asyncHandler = (fn) => {
       next(
         error instanceof ErrorClass
           ? error
-          : new ErrorClass(error.message, error.statusCode)
+          : new ErrorClass(error.message, error.statusCode),
       );
     });
   };
@@ -48,6 +48,7 @@ export const globalErrorHandling = (error, req, res, next) => {
   if (process.env.NODE_ENV === "development") {
     return res.status(statusCode).json({
       success: false,
+      data: null,
       message: error.message,
       stack: error.stack,
       error,
@@ -56,6 +57,7 @@ export const globalErrorHandling = (error, req, res, next) => {
 
   return res.status(statusCode).json({
     success: false,
+    data: null,
     message: error.message || "Internal Server Error",
   });
 };

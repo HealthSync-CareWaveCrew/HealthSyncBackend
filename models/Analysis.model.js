@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const analysisSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['image', 'clinical'],
+    enum: ['image', 'clinical', 'text'],
     required: true,
   },
    user: {

@@ -10,6 +10,7 @@ import {
 } from '../controller/analysis.controller.js';
 import { asyncHandler } from '../util/errorHandling.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
+import { checkSubscription } from '../middleware/checkSubscription.js';
 
 const router = express.Router();
 
@@ -20,19 +21,30 @@ const upload = multer({ storage: multer.memoryStorage() });
  * POST /analyze-image
  * Analyzes medical images for disease detection
  */
-router.post('/analyze-image', protect, upload.single('image'), asyncHandler(analyzeImage));
+router.post(
+  '/analyze-image',
+  protect,
+  checkSubscription('image'),
+  upload.single('image'),
+  asyncHandler(analyzeImage)
+);
 
 /**
  * POST /analyze-clinical-data
  * Analyzes clinical data for disease prediction
  */
-router.post('/analyze-clinical-data', protect, asyncHandler(analyzeClinicalData));
+router.post(
+  '/analyze-clinical-data',
+  protect,
+  checkSubscription('text'),
+  asyncHandler(analyzeClinicalData)
+);
 
 /**
  * POST /chat
  * Handles chat messages with AI assistant
  */
-router.post('/chat', asyncHandler(sendChatMessage));
+router.post('/chat', protect, checkSubscription('text'), asyncHandler(sendChatMessage));
 
 /**
  * GET /analysis-history
