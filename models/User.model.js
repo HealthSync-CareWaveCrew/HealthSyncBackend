@@ -34,6 +34,13 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
   },
+  stripe_customer_id: {
+    type: String,
+    default: null,
+  },
+  stripeCustomerId: {
+    type: String,
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],

@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node --env-file=.env server.js",
     "dev": "node --env-file=.env --watch server.js",
-    "test": "node --env-file=.env verify_clinical.js"
+    "test": "node --env-file=.env verify_clinical.js",
+    "seed:payment-plans": "node --env-file=.env scripts/seedPaymentPlans.js"
   },
   "keywords": [
     "medical",
@@ -31,6 +32,7 @@
     "mongoose": "^8.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^6.10.1",
-    "otp-generator": "^4.0.1"
+    "otp-generator": "^4.0.1",
+    "stripe": "^20.4.1"
   }
 }

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/index.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
 import connectDB from './config/dbConnection.js';
 import { globalErrorHandling } from './util/errorHandling.js';
 
@@ -18,6 +19,9 @@ app.use(cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
     credentials: true
 }));
+
+// Stripe webhook requires raw body. Register before JSON parser.
+app.use('/api/payment', paymentRoutes);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
