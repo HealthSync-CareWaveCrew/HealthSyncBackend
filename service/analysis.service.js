@@ -16,6 +16,8 @@ const ai = new GoogleGenAI({ apiKey });
 /**
  * Service: Analyze medical image using Gemini AI
  */
+// "disease": "Predicted condition/type (e.g., 'Meningioma', 'Diabetic Retinopathy', 'Normal')",
+
 export const analyzeImageService = async (diseaseId, file, diseaseType, user) => {
     try {
         const uploadedImage = await uploadImageBufferToCloudinary(file);
@@ -42,7 +44,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType, user) =>
         {
             "match": boolean,
             "reason": "Reason for mismatch (only if match is false)",
-            "disease": "Predicted condition/type (e.g., 'Meningioma', 'Diabetic Retinopathy', 'Normal')",
+            "disease": "${diseaseType} Prediction",
             "confidence": "e.g., High 95%",
             "description": "Detailed description of findings..."
         }
@@ -116,7 +118,7 @@ export const analyzeImageService = async (diseaseId, file, diseaseType, user) =>
  * Service: Analyze clinical data using Gemini AI
  */
 
-export const analyzeClinicalDataService = async (diseaseId, diseaseType, formData,user) => {
+export const analyzeClinicalDataService = async (diseaseId, diseaseType, formData, user) => {
     try {
         const modelId = "gemini-flash-latest";
 
@@ -140,6 +142,7 @@ export const analyzeClinicalDataService = async (diseaseId, diseaseType, formDat
         Output strictly in JSON format:
         {
             "match": true, 
+            "reason": "Reason for mismatch (only if match is false)",
             "disease": "${diseaseType} Prediction",
             "confidence": "e.g., High (85%)",
             "description": "Detailed analysis..."
