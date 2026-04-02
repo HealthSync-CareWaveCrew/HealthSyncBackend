@@ -19,7 +19,15 @@ const subscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["trialing", "active", "past_due", "canceled", "unpaid"],
+      enum: [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "unpaid",
+        "incomplete",
+        "incomplete_expired",
+      ],
       required: true,
     },
     current_period_start: {

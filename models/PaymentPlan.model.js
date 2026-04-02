@@ -12,6 +12,12 @@ const paymentPlanSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      default: "usd",
+      lowercase: true,
+      trim: true,
+    },
     type: {
       type: String,
       enum: ["text", "image"],

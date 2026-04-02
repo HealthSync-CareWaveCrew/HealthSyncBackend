@@ -18,6 +18,7 @@ const buildPlanData = async ({ priceId, type, defaultName }) => {
   return {
     plan_name: planName,
     cost: (price.unit_amount || 0) / 100,
+    currency: price.currency || "usd",
     type,
     stripe_product_id: product?.id || price.product,
     stripe_price_id: price.id,
