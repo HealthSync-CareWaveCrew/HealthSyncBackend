@@ -4,7 +4,7 @@ import Analysis from "../models/Analysis.model.js";
 import stripe from "../config/stripe.js";
 import { getStripeSubscriptionPeriodDates } from "../util/stripeSubscriptionDates.js";
 
-const ACTIVE_SUBSCRIPTION_STATUSES = ["trialing", "active", "past_due"];
+const ACTIVE_SUBSCRIPTION_STATUSES = ["active", "past_due"];
 
 export const checkSubscription = (featureType) => {
   return async (req, res, next) => {
@@ -27,22 +27,19 @@ export const checkSubscription = (featureType) => {
       req.subscription = subscription || null;
 
       if (subscription) {
-        const missingPeriod =
-          !subscription.current_period_end ||
-          (subscription.status === "trialing" && !subscription.trial_end);
+        const missingPeriod = !subscription.current_period_end;
         if (missingPeriod) {
           try {
             const stripeSub = await stripe.subscriptions.retrieve(
               subscription.stripe_subscription_id,
             );
             subscription.status = stripeSub.status;
-            const { currentPeriodStart, currentPeriodEnd, trialEnd } =
+            const { currentPeriodStart, currentPeriodEnd } =
               getStripeSubscriptionPeriodDates(stripeSub);
             subscription.current_period_start =
               currentPeriodStart || subscription.current_period_start;
             subscription.current_period_end =
               currentPeriodEnd || subscription.current_period_end;
-            subscription.trial_end = trialEnd || subscription.trial_end;
             subscription.cancel_at_period_end =
               stripeSub.cancel_at_period_end || false;
             await subscription.save();
@@ -88,34 +85,11 @@ export const checkSubscription = (featureType) => {
       }
 
       if (subscription) {
-        if (subscription.status === "trialing" && !subscription.trial_end) {
-          return res.status(403).json({
-            success: false,
-            data: null,
-            message: "Free trial has ended. Please subscribe.",
-          });
-        }
-
-        if (
-          subscription.status !== "trialing" &&
-          !subscription.current_period_end
-        ) {
+        if (!subscription.current_period_end) {
           return res.status(403).json({
             success: false,
             data: null,
             message: "Subscription has expired. Please subscribe again.",
-          });
-        }
-
-        if (
-          subscription.status === "trialing" &&
-          subscription.trial_end &&
-          subscription.trial_end < now
-        ) {
-          return res.status(403).json({
-            success: false,
-            data: null,
-            message: "Free trial has ended. Please subscribe.",
           });
         }
 

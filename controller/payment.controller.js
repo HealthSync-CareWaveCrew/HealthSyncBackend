@@ -8,8 +8,6 @@ import Analysis from "../models/Analysis.model.js";
 import ErrorClass from "../util/errorClass.js";
 import { getStripeSubscriptionPeriodDates } from "../util/stripeSubscriptionDates.js";
 
-const TRIAL_DAYS = 3;
-
 const ensureStripeCustomer = async (user) => {
   if (user.stripe_customer_id) {
     return user.stripe_customer_id;
@@ -303,7 +301,6 @@ export const adminCreatePlan = async (req, res) => {
       type,
       billing_cycle,
       description = "",
-      free_trials,
       isActive = true,
     } = req.body;
 
@@ -345,12 +342,6 @@ export const adminCreatePlan = async (req, res) => {
       isActive: Boolean(isActive),
       description,
       feature_limits: {
-        free_trials:
-          type === "text"
-            ? Number.isFinite(Number(free_trials))
-              ? Number(free_trials)
-              : 3
-            : 0,
         billing_cycle: normalizedCycle,
       },
     });
@@ -381,7 +372,6 @@ export const adminUpdatePlan = async (req, res) => {
       currency,
       billing_cycle,
       description,
-      free_trials,
       isActive,
     } = req.body;
 
@@ -393,9 +383,6 @@ export const adminUpdatePlan = async (req, res) => {
     }
     if (typeof isActive === "boolean") {
       plan.isActive = isActive;
-    }
-    if (plan.type === "text" && Number.isFinite(Number(free_trials))) {
-      plan.feature_limits.free_trials = Number(free_trials);
     }
 
     const normalizedCycle = billing_cycle
@@ -524,7 +511,7 @@ export const subscribe = async (req, res) => {
     // Cancel any existing active subscriptions of the same type
     const existingSubscriptions = await Subscription.find({
       user_id: userId,
-      status: { $in: ["active", "trialing"] },
+      status: { $in: ["active", "past_due"] },
     }).populate("plan_id");
 
     for (const existingSub of existingSubscriptions) {
@@ -570,35 +557,13 @@ export const subscribe = async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethod.stripe_pm_id },
     });
 
-    let trialAvailable = false;
-    if (plan.type === "text") {
-      const freeTrialsAllowed = plan.feature_limits?.free_trials ?? 3;
-      const textPlanIds = await PaymentPlan.find({ type: "text" }).distinct(
-        "_id",
-      );
-      const usedTrials = await Payment.countDocuments({
-        user_id: userId,
-        plan_id: { $in: textPlanIds },
-        amount: 0,
-      });
-      trialAvailable = usedTrials < freeTrialsAllowed;
-    }
-
     const subscriptionParams = {
       customer: stripeCustomerId,
       items: [{ price: plan.stripe_price_id }],
       default_payment_method: paymentMethod.stripe_pm_id,
       expand: ["latest_invoice.payment_intent"],
+      payment_behavior: "allow_incomplete",
     };
-
-    // Add trial for text plans
-    if (trialAvailable && plan.type === "text") {
-      subscriptionParams.trial_period_days = TRIAL_DAYS;
-      subscriptionParams.payment_behavior = "default_incomplete";
-    } else {
-      // For image plans or non-trial, use allow_incomplete for better 3DS handling
-      subscriptionParams.payment_behavior = "allow_incomplete";
-    }
 
     console.log(
       "Creating Stripe subscription with params:",
@@ -610,7 +575,7 @@ export const subscribe = async (req, res) => {
       status: subscription.status,
     });
 
-    const { currentPeriodStart, currentPeriodEnd, trialEnd } =
+    const { currentPeriodStart, currentPeriodEnd } =
       getStripeSubscriptionPeriodDates(subscription);
 
     const savedSubscription = await Subscription.findOneAndUpdate(
@@ -622,7 +587,6 @@ export const subscribe = async (req, res) => {
         status: subscription.status,
         current_period_start: currentPeriodStart,
         current_period_end: currentPeriodEnd,
-        trial_end: trialEnd,
         cancel_at_period_end: subscription.cancel_at_period_end || false,
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
@@ -632,42 +596,25 @@ export const subscribe = async (req, res) => {
       status: savedSubscription.status,
     });
 
-    // Create payment record for trial text plans
-    if (trialAvailable && plan.type === "text") {
-      await Payment.create({
-        user_id: userId,
-        plan_id: plan._id,
-        payment_method_id: paymentMethod._id,
-        stripe_subscription_id: subscription.id,
-        stripe_payment_intent_id:
-          subscription.latest_invoice?.payment_intent?.id,
-        status: "active",
-        amount: 0,
-        currency: plan.currency || "usd",
-        due_date: trialEnd,
-      });
-    } else {
-      // Create payment record for image plans and non-trial subscriptions
-      const paymentStatus =
-        subscription.status === "active" || subscription.status === "trialing"
-          ? "active"
-          : subscription.status === "incomplete"
-            ? "pending"
-            : "failed";
+    const paymentStatus =
+      subscription.status === "active"
+        ? "active"
+        : subscription.status === "incomplete"
+          ? "pending"
+          : "failed";
 
-      await Payment.create({
-        user_id: userId,
-        plan_id: plan._id,
-        payment_method_id: paymentMethod._id,
-        stripe_subscription_id: subscription.id,
-        stripe_payment_intent_id:
-          subscription.latest_invoice?.payment_intent?.id,
-        status: paymentStatus,
-        amount: plan.cost || 0,
-        currency: plan.currency || "usd",
-        due_date: currentPeriodEnd,
-      });
-    }
+    await Payment.create({
+      user_id: userId,
+      plan_id: plan._id,
+      payment_method_id: paymentMethod._id,
+      stripe_subscription_id: subscription.id,
+      stripe_payment_intent_id:
+        subscription.latest_invoice?.payment_intent?.id,
+      status: paymentStatus,
+      amount: plan.cost || 0,
+      currency: plan.currency || "usd",
+      due_date: currentPeriodEnd,
+    });
 
     if (subscription.status === "incomplete") {
       return res.status(200).json({
@@ -772,7 +719,7 @@ export const getSubscriptionStatus = async (req, res) => {
     const requestedType = req.query?.feature;
     const subscriptions = await Subscription.find({
       user_id: userId,
-      status: { $in: ["trialing", "active", "past_due", "canceled"] },
+      status: { $in: ["active", "past_due", "canceled"] },
     })
       .populate("plan_id")
       .sort({ updated_at: -1 });
@@ -798,7 +745,6 @@ export const getSubscriptionStatus = async (req, res) => {
             }
           : null,
         current_period_end: subscription.current_period_end,
-        trial_end: subscription.trial_end,
         cancel_at_period_end: subscription.cancel_at_period_end || false,
       };
     };
@@ -815,22 +761,19 @@ export const getSubscriptionStatus = async (req, res) => {
         continue;
       }
 
-      const missingPeriod =
-        !subscription.current_period_end ||
-        (subscription.status === "trialing" && !subscription.trial_end);
+      const missingPeriod = !subscription.current_period_end;
       if (missingPeriod) {
         try {
           const stripeSub = await stripe.subscriptions.retrieve(
             subscription.stripe_subscription_id,
           );
           subscription.status = stripeSub.status;
-          const { currentPeriodStart, currentPeriodEnd, trialEnd } =
+          const { currentPeriodStart, currentPeriodEnd } =
             getStripeSubscriptionPeriodDates(stripeSub);
           subscription.current_period_start =
             currentPeriodStart || subscription.current_period_start;
           subscription.current_period_end =
             currentPeriodEnd || subscription.current_period_end;
-          subscription.trial_end = trialEnd || subscription.trial_end;
           subscription.cancel_at_period_end =
             stripeSub.cancel_at_period_end || false;
           await subscription.save();
@@ -957,7 +900,6 @@ export const getAdminSubscriptions = async (req, res) => {
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
-      trial_end: subscription.trial_end,
       updated_at: subscription.updated_at,
       user: subscription.user_id
         ? {
@@ -982,9 +924,6 @@ export const getAdminSubscriptions = async (req, res) => {
       total: filteredSubscriptions.length,
       active: filteredSubscriptions.filter((item) => item.status === "active")
         .length,
-      trialing: filteredSubscriptions.filter(
-        (item) => item.status === "trialing",
-      ).length,
       canceled: filteredSubscriptions.filter(
         (item) => item.status === "canceled",
       ).length,

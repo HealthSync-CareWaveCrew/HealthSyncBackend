@@ -40,11 +40,6 @@ const paymentPlanSchema = new mongoose.Schema(
       trim: true,
     },
     feature_limits: {
-      free_trials: {
-        type: Number,
-        default: 3,
-        min: 0,
-      },
       billing_cycle: {
         type: String,
         trim: true,

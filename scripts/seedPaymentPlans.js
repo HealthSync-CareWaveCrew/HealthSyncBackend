@@ -25,7 +25,6 @@ const buildPlanData = async ({ priceId, type, defaultName }) => {
     isActive: price.active,
     description: product?.description || "",
     feature_limits: {
-      free_trials: type === "text" ? 3 : 0,
       billing_cycle: billingCycle,
     },
   };

@@ -32,7 +32,7 @@ export const handleWebhook = async (req, res) => {
     switch (event.type) {
       case "customer.subscription.updated": {
         const subscription = event.data.object;
-        const { currentPeriodStart, currentPeriodEnd, trialEnd } =
+        const { currentPeriodStart, currentPeriodEnd } =
           getStripeSubscriptionPeriodDates(subscription);
         await Subscription.findOneAndUpdate(
           { stripe_subscription_id: subscription.id },
@@ -40,7 +40,6 @@ export const handleWebhook = async (req, res) => {
             status: subscription.status,
             current_period_start: currentPeriodStart,
             current_period_end: currentPeriodEnd,
-            trial_end: trialEnd,
             cancel_at_period_end: subscription.cancel_at_period_end || false,
           },
         );

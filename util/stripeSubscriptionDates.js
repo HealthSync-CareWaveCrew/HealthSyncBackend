@@ -13,6 +13,5 @@ export const getStripeSubscriptionPeriodDates = (subscription) => {
   return {
     currentPeriodStart: toDate(currentPeriodStart),
     currentPeriodEnd: toDate(currentPeriodEnd),
-    trialEnd: toDate(subscription?.trial_end),
   };
 };
