@@ -14,10 +14,12 @@ import {
   getUserActivity
 } from '../controller/admin.controller.js'
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
+// import adminRoutes from './admin.routes.js';
 
 // All admin routes require authentication and admin role
 router.use(protect);
 router.use(restrictTo('admin'));
+// router.use('/admin', adminRoutes);
 
 // Dashboard
 router.get('/stats', getDashboardStats);
