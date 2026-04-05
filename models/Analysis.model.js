@@ -1,12 +1,12 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const analysisSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['image', 'clinical', 'text'],
+    enum: ["image", "clinical"],
     required: true,
   },
-   user: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -46,6 +46,6 @@ const analysisSchema = new mongoose.Schema({
   },
 });
 
-const Analysis = mongoose.model('Analysis', analysisSchema);
+const Analysis = mongoose.model("Analysis", analysisSchema);
 
 export default Analysis;

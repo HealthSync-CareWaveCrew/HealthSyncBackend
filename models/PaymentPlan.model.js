@@ -12,6 +12,12 @@ const paymentPlanSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      default: "usd",
+      lowercase: true,
+      trim: true,
+    },
     type: {
       type: String,
       enum: ["text", "image"],
@@ -34,11 +40,6 @@ const paymentPlanSchema = new mongoose.Schema(
       trim: true,
     },
     feature_limits: {
-      free_trials: {
-        type: Number,
-        default: 3,
-        min: 0,
-      },
       billing_cycle: {
         type: String,
         trim: true,

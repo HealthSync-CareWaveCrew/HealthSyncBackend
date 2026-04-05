@@ -2,6 +2,7 @@ import stripe from "../config/stripe.js";
 import Payment from "../models/Payment.model.js";
 import PaymentMethod from "../models/PaymentMethod.model.js";
 import Subscription from "../models/Subscription.model.js";
+import { getStripeSubscriptionPeriodDates } from "../util/stripeSubscriptionDates.js";
 
 const toDate = (unixSeconds) => {
   if (!unixSeconds) return null;
@@ -31,13 +32,14 @@ export const handleWebhook = async (req, res) => {
     switch (event.type) {
       case "customer.subscription.updated": {
         const subscription = event.data.object;
+        const { currentPeriodStart, currentPeriodEnd } =
+          getStripeSubscriptionPeriodDates(subscription);
         await Subscription.findOneAndUpdate(
           { stripe_subscription_id: subscription.id },
           {
             status: subscription.status,
-            current_period_start: toDate(subscription.current_period_start),
-            current_period_end: toDate(subscription.current_period_end),
-            trial_end: toDate(subscription.trial_end),
+            current_period_start: currentPeriodStart,
+            current_period_end: currentPeriodEnd,
             cancel_at_period_end: subscription.cancel_at_period_end || false,
           },
         );
