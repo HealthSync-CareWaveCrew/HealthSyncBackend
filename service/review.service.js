@@ -20,16 +20,16 @@ const createReviewService = async (reviewData) => {
 const getAllReviewsService = async (filters = {}) => {
   try {
     const query = { isVisible: true };
-    
+
     // Add additional filters if provided
     if (filters.isApproved !== undefined) {
       query.isApproved = filters.isApproved;
     }
-    
+
     if (filters.rating) {
       query.rating = filters.rating;
     }
-    
+
     if (filters.userEmail) {
       query.user.email = filters.userEmail;
     }
@@ -37,7 +37,7 @@ const getAllReviewsService = async (filters = {}) => {
     const reviews = await Review.find(query).populate('user', 'name email')
       .sort({ createdAt: -1 })
       .lean();
-    
+
     return reviews;
   } catch (error) {
     throw error;
@@ -46,10 +46,14 @@ const getAllReviewsService = async (filters = {}) => {
 
 const getAllReviewsAdminService = async () => {
   try {
-    const reviews = await Review.find()
+    // const reviews = await Review.find()
+    //   .sort({ createdAt: -1 })
+    //   .lean();
+
+    const reviews = await Review.find().populate('user', 'name email')
       .sort({ createdAt: -1 })
       .lean();
-    
+
     return reviews;
   } catch (error) {
     throw error;
@@ -58,10 +62,13 @@ const getAllReviewsAdminService = async () => {
 
 const getReviewsByUserService = async (userId) => {
   try {
-    const reviews = await Review.find({ 'user': userId })
+    // const reviews = await Review.find({ 'user': userId })
+    //   .sort({ createdAt: -1 })
+    //   .lean();
+    const reviews = await Review.find({ 'user': userId }).populate('user', 'name email')
       .sort({ createdAt: -1 })
       .lean();
-    
+
     return reviews;
   } catch (error) {
     throw error;
@@ -71,11 +78,11 @@ const getReviewsByUserService = async (userId) => {
 const getReviewByIdService = async (reviewId) => {
   try {
     const review = await Review.findById(reviewId);
-    
+
     if (!review) {
       throw new ErrorClass('Review not found', 404);
     }
-    
+
     return review;
   } catch (error) {
     if (error.name === 'CastError') {
@@ -87,17 +94,17 @@ const getReviewByIdService = async (reviewId) => {
 
 const updateReviewService = async (reviewId, updateData, userEmail) => {
   try {
-    const review = await Review.findById(reviewId);
-    
+    const review = await Review.findById(reviewId).populate('user', 'name email');;
+
     if (!review) {
       throw new ErrorClass('Review not found', 404);
     }
-    
+
     // Check if user owns this review (unless admin operation)
     if (userEmail && review.user.email !== userEmail) {
       throw new ErrorClass('You can only update your own reviews', 403);
     }
-    
+
     // Update allowed fields
     const allowedUpdates = ['rating', 'title', 'comment'];
     allowedUpdates.forEach((field) => {
@@ -105,7 +112,7 @@ const updateReviewService = async (reviewId, updateData, userEmail) => {
         review[field] = updateData[field];
       }
     });
-    
+
     await review.save();
     return review;
   } catch (error) {
@@ -129,12 +136,12 @@ const updateReviewVisibilityService = async (reviewId, isVisible) => {
       reviewId,
       { isVisible },
       { new: true, runValidators: true }
-    );
-    
+    ).populate('user', 'name email');
+
     if (!review) {
       throw new ErrorClass('Review not found', 404);
     }
-    
+
     return review;
   } catch (error) {
     if (error.name === 'CastError') {
@@ -151,11 +158,11 @@ const updateReviewApprovalService = async (reviewId, isApproved) => {
       { isApproved },
       { new: true, runValidators: true }
     );
-    
+
     if (!review) {
       throw new ErrorClass('Review not found', 404);
     }
-    
+
     return review;
   } catch (error) {
     if (error.name === 'CastError') {
@@ -168,16 +175,16 @@ const updateReviewApprovalService = async (reviewId, isApproved) => {
 const deleteReviewService = async (reviewId, userEmail) => {
   try {
     const review = await Review.findById(reviewId);
-    
+
     if (!review) {
       throw new ErrorClass('Review not found', 404);
     }
-    
+
     // Check if user owns this review (unless admin operation)
     if (userEmail && review.user.email !== userEmail) {
       throw new ErrorClass('You can only delete your own reviews', 403);
     }
-    
+
     await Review.findByIdAndDelete(reviewId);
     return { message: 'Review deleted successfully' };
   } catch (error) {
@@ -192,7 +199,7 @@ const getReviewStatsService = async () => {
   try {
     const stats = await Review.aggregate([
       {
-        $match: { isVisible: true, isApproved: true }
+        $match: { isVisible: true, isVisible: true }
       },
       {
         $group: {
@@ -259,7 +266,7 @@ const getReviewStatsService = async () => {
         }
       }
     ]);
-    
+
     return stats.length > 0 ? stats[0] : {
       totalReviews: 0,
       averageRating: 0,
