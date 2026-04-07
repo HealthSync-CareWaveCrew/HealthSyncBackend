@@ -3,7 +3,12 @@ import {
   cancelSubscription,
   createCustomer,
   createSetupIntent,
+  adminCreatePlan,
+  adminDeactivatePlan,
+  adminGetPlans,
+  adminUpdatePlan,
   deletePaymentMethod,
+  getAdminSubscriptions,
   getPaymentHistory,
   getPaymentMethods,
   getPlans,
@@ -13,7 +18,7 @@ import {
   subscribe,
 } from "../controller/payment.controller.js";
 import { handleWebhook } from "../controller/webhook.controller.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, restrictTo } from "../middleware/authMiddleware.js";
 import { asyncHandler } from "../util/errorHandling.js";
 
 const router = express.Router();
@@ -30,6 +35,31 @@ router.use(protect);
 router.post("/create-customer", asyncHandler(createCustomer));
 router.post("/setup-intent", asyncHandler(createSetupIntent));
 router.get("/plans", asyncHandler(getPlans));
+router.get(
+  "/admin/plans",
+  restrictTo("admin"),
+  asyncHandler(adminGetPlans),
+);
+router.get(
+  "/admin/subscriptions",
+  restrictTo("admin"),
+  asyncHandler(getAdminSubscriptions),
+);
+router.post(
+  "/admin/plans",
+  restrictTo("admin"),
+  asyncHandler(adminCreatePlan),
+);
+router.put(
+  "/admin/plans/:id",
+  restrictTo("admin"),
+  asyncHandler(adminUpdatePlan),
+);
+router.delete(
+  "/admin/plans/:id",
+  restrictTo("admin"),
+  asyncHandler(adminDeactivatePlan),
+);
 router.post("/save-payment-method", asyncHandler(savePaymentMethod));
 router.get("/payment-methods", asyncHandler(getPaymentMethods));
 router.delete("/payment-method/:id", asyncHandler(deletePaymentMethod));

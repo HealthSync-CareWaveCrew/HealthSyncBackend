@@ -27,6 +27,5 @@ router.get('/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-router.post('/subscribe', subscribe);
 
 export default router;
