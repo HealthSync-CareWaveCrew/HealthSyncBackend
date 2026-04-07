@@ -94,7 +94,7 @@ const getReviewByIdService = async (reviewId) => {
 
 const updateReviewService = async (reviewId, updateData, userEmail) => {
   try {
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(reviewId).populate('user', 'name email');;
 
     if (!review) {
       throw new ErrorClass('Review not found', 404);
@@ -136,7 +136,7 @@ const updateReviewVisibilityService = async (reviewId, isVisible) => {
       reviewId,
       { isVisible },
       { new: true, runValidators: true }
-    );
+    ).populate('user', 'name email');
 
     if (!review) {
       throw new ErrorClass('Review not found', 404);
@@ -199,7 +199,7 @@ const getReviewStatsService = async () => {
   try {
     const stats = await Review.aggregate([
       {
-        $match: { isVisible: true, isApproved: true }
+        $match: { isVisible: true, isVisible: true }
       },
       {
         $group: {
