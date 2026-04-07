@@ -58,7 +58,10 @@ const getAllReviewsAdminService = async () => {
 
 const getReviewsByUserService = async (userId) => {
   try {
-    const reviews = await Review.find({ 'user': userId })
+    // const reviews = await Review.find({ 'user': userId })
+    //   .sort({ createdAt: -1 })
+    //   .lean();
+     const reviews = await Review.find({ 'user': userId }).populate('user', 'name email')
       .sort({ createdAt: -1 })
       .lean();
     
