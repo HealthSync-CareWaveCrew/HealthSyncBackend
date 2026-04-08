@@ -6,7 +6,7 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 router.get('/stats', protect,asyncHandler(reviewController.getReviewStats));
 router.post('/',protect, asyncHandler(reviewController.createReview));
-router.get('/', protect,asyncHandler(reviewController.getAllReviews));
+router.get('/',asyncHandler(reviewController.getAllReviews));
 router.get('/admin/all', protect,asyncHandler(reviewController.getAllReviewsAdmin));
 router.get('/user', protect, asyncHandler(reviewController.getReviewsByUser));
 router.get('/:id', protect,asyncHandler(reviewController.getReviewById));
